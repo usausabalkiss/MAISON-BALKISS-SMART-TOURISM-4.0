@@ -84,7 +84,6 @@ else:
             try:
                 response = requests.post(url, json={"contents": [{"parts": [{"text": prompt}]}]}, headers={"Content-Type": "application/json"}, timeout=15)
                 res_json = response.json()
-                # رجعنا الرسالة الترحيبية الأصلية هنا
                 answer = res_json['candidates'][0]['content']['parts'][0]['text'] if 'candidates' in res_json else "Welcome! I am your Maison Balkiss guide. I am here to help you discover Morocco's hidden gems."
                 st.session_state.chat_history.append({"u": user_query, "a": answer})
             except: st.error("Offline Mode")
@@ -103,28 +102,32 @@ else:
 
         search_q = st.text_input(t['search_place'])
 
+        # منطق البحث مع حفظ الموقع
         if search_q:
             try:
-                geolocator = Nominatim(user_agent="balkiss_app_v3")
+                geolocator = Nominatim(user_agent="balkiss_app_v4")
                 location = geolocator.geocode(search_q)
-                if location: st.session_state.map_center = [location.latitude, location.longitude]
-            except: st.warning("Showing last location.")
+                if location: 
+                    st.session_state.map_center = [location.latitude, location.longitude]
+            except: st.warning("Showing last known location.")
         elif selected_city:
             city_coords = {"Sefrou (صفرو)": [33.8247, -4.8278], "Figuig (فكيك)": [32.1083, -1.2283], "Tangier (طنجة)": [35.7595, -5.8340]}
             st.session_state.map_center = city_coords.get(selected_city, st.session_state.map_center)
 
-        m = folium.Map(location=st.session_state.map_center, zoom_start=14)
+        # إنشاء الخريطة مع طبقة أسماء أوضح
+        m = folium.Map(location=st.session_state.map_center, zoom_start=14, tiles='OpenStreetMap')
         
+        # إضافة نقط ذهبية أوتوماتيكية لأي بحث جديد
+        if search_q and not any(city in search_q for city in ["Sefrou", "صفرو", "Figuig", "فكيك", "Tangier", "طنجة"]):
+            folium.Marker(st.session_state.map_center, popup=f"Smart Point: {search_q}", icon=folium.Icon(color='gold', icon='map-marker')).add_to(m)
+
         # تعمير الخريطة بنقط حقيقية لصفرو
         if "Sefrou" in (search_q or selected_city) or "صفرو" in (search_q or selected_city):
-            # معالم أثرية
             folium.Marker([33.8280, -4.8521], popup="Oued Aggai Waterfalls", icon=folium.Icon(color='red', icon='star')).add_to(m)
             folium.Marker([33.8210, -4.8250], popup="Historical Mellah", icon=folium.Icon(color='red', icon='info-sign')).add_to(m)
             folium.Marker([33.8300, -4.8320], popup="Bab El Maqam Square", icon=folium.Icon(color='red', icon='camera')).add_to(m)
-            # مطاعم
             folium.Marker([33.8323, -4.8268], popup="Flame & Fork", icon=folium.Icon(color='green', icon='cutlery')).add_to(m)
             folium.Marker([33.8315, -4.8260], popup="Restaurant Es-saqia", icon=folium.Icon(color='green', icon='cutlery')).add_to(m)
-            # تعاونيات
             folium.Marker([33.7873, -4.8207], popup="Al Iklil Cooperative", icon=folium.Icon(color='blue', icon='leaf')).add_to(m)
             folium.Marker([33.8340, -4.8280], popup="Artisan Cooperative Sefrou", icon=folium.Icon(color='blue', icon='wrench')).add_to(m)
 
