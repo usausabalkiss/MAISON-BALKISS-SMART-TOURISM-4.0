@@ -151,12 +151,62 @@ else:
                 st.info(t['tips'])
                 st.markdown("🍽️ **Local Flavors:** Don't miss the *Sefroui Harira* and local olives in the artisan district.")
 
-    with tab3:
-        st.header(t['tab3'])
-        st.write("Heritage Passport logic.")
+   with tab3:
+        st.header(f"📜 {t['tab3']}")
+        
+        # تصميم الجواز التراثي
+        st.markdown(f"""
+            <div style="border: 2px solid #D4AF37; padding: 20px; border-radius: 15px; background-color: #111111;">
+                <h2 style="text-align: center; color: #D4AF37;">HERITAGE PASSPORT</h2>
+                <p style="text-align: center; color: #D4AF37; font-style: italic;">Maison Balkiss - Sefrou Edition</p>
+                <hr style="border-color: #D4AF37;">
+                <div style="display: flex; justify-content: space-around; text-align: center;">
+                    <div>
+                        <h4 style="color: #D4AF37;">Visitor</h4>
+                        <p style="color: white;">{v_name if 'v_name' in locals() else "Guest"}</p>
+                    </div>
+                    <div>
+                        <h4 style="color: #D4AF37;">Status</h4>
+                        <p style="color: #D4AF37; font-weight: bold;">Explorer 🛡️</p>
+                    </div>
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
 
-    st.markdown("---")
-    st.subheader(t['feedback'])
-    st.text_area("Your Feedback...")
-    st.button("Submit Feedback")
-    st.markdown("<center>© 2026 MAISON BALKISS - Smart Tourism 4.0</center>", unsafe_allow_html=True)
+        st.write("")
+        st.subheader("Your Collected Stamps / طوابعك التراثية")
+        
+        # عرض الطوابع (Stamps) على شكل أعمدة
+        col_s1, col_s2, col_s3 = st.columns(3)
+        
+        with col_s1:
+            st.markdown("""
+                <div style="text-align: center; opacity: 1.0;">
+                    <div style="font-size: 50px;">🌊</div>
+                    <p style="color: #D4AF37; font-weight: bold;">Sefrou Falls</p>
+                    <span style="color: green;">✓ Collected</span>
+                </div>
+            """, unsafe_allow_html=True)
+
+        with col_s2:
+            st.markdown("""
+                <div style="text-align: center; opacity: 0.3;">
+                    <div style="font-size: 50px;">🧵</div>
+                    <p style="color: #D4AF37; font-weight: bold;">Dar El Ghezl</p>
+                    <span style="color: grey;">Locked</span>
+                </div>
+            """, unsafe_allow_html=True)
+
+        with col_s3:
+            st.markdown("""
+                <div style="text-align: center; opacity: 0.3;">
+                    <div style="font-size: 50px;">🍒</div>
+                    <p style="color: #D4AF37; font-weight: bold;">Cherry Fest</p>
+                    <span style="color: grey;">Locked</span>
+                </div>
+            """, unsafe_allow_html=True)
+
+        st.markdown("---")
+        # زر لمحاكاة أخذ طابع (مثلا عن طريق QR Code مستقبلاً)
+        if st.button("📸 Scan QR at Location to Collect Stamp"):
+            st.success("Feature coming soon: This will open your camera to scan QR codes at Dar El Ghezl, The Waterfall, etc.")
