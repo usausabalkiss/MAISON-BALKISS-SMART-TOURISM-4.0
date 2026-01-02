@@ -51,6 +51,10 @@ lang_dict = {
 if 'logged_in' not in st.session_state: st.session_state.logged_in = False
 if 'chat_history' not in st.session_state: st.session_state.chat_history = []
 if 'map_center' not in st.session_state: st.session_state.map_center = [33.8247, -4.8278]
+# نظام النقاط للجواز
+if 'stamps_count' not in st.session_state: st.session_state.stamps_count = 1
+if 'visited_places' not in st.session_state: 
+    st.session_state.visited_places = [{"place": "Oued Aggai Falls", "date": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}]
 
 # 4. القائمة الجانبية
 with st.sidebar:
@@ -73,6 +77,7 @@ if not st.session_state.logged_in:
         if v_name and v_contact:
             with open('visitors_log.csv', 'a') as f: f.write(f"{datetime.now()},{v_name},{v_contact},{lang}\n")
             st.session_state.logged_in = True
+            st.session_state.visitor_name = v_name
             st.rerun()
         else: st.warning("Please fill your details.")
 
@@ -140,7 +145,6 @@ else:
         if is_sefrou:
             st.markdown(f"## 🍒 {t['sefrou_title']}")
             st.write(t['sefrou_desc'])
-            
             c1, c2 = st.columns(2)
             with c1:
                 st.markdown(f"### 📍 {t['route_plan']}")
@@ -153,60 +157,41 @@ else:
     with tab3:
         st.header(f"📜 {t['tab3']}")
         
-        # تصميم الجواز التراثي
-        st.markdown(f"""
-            <div style="border: 2px solid #D4AF37; padding: 20px; border-radius: 15px; background-color: #111111;">
-                <h2 style="text-align: center; color: #D4AF37;">HERITAGE PASSPORT</h2>
-                <p style="text-align: center; color: #D4AF37; font-style: italic;">Maison Balkiss - Sefrou Edition</p>
-                <hr style="border-color: #D4AF37;">
-                <div style="display: flex; justify-content: space-around; text-align: center;">
-                    <div>
-                        <h4 style="color: #D4AF37;">Visitor</h4>
-                        <p style="color: white;">{v_name if 'v_name' in locals() else "Guest"}</p>
-                    </div>
-                    <div>
-                        <h4 style="color: #D4AF37;">Status</h4>
-                        <p style="color: #D4AF37; font-weight: bold;">Explorer 🛡️</p>
-                    </div>
-                </div>
-            </div>
-        """, unsafe_allow_html=True)
-
-        st.write("")
-        st.subheader("Your Collected Stamps / طوابعك التراثية")
+        # 1. حالة الجواز والتقدم
+        st.markdown(f"### 🛡️ Status: {st.session_state.stamps_count}/10 Visits")
+        st.progress(st.session_state.stamps_count / 10)
         
-        col_s1, col_s2, col_s3 = st.columns(3)
-        
-        with col_s1:
-            st.markdown("""
-                <div style="text-align: center; opacity: 1.0;">
-                    <div style="font-size: 50px;">🌊</div>
-                    <p style="color: #D4AF37; font-weight: bold;">Sefrou Falls</p>
-                    <span style="color: green;">✓ Collected</span>
-                </div>
-            """, unsafe_allow_html=True)
+        if st.session_state.stamps_count >= 10:
+            st.balloons()
+            st.success("🎉 Congratulations! You are now a Heritage Ambassador. Enjoy 20% discount at Maison Balkiss!")
 
-        with col_s2:
-            st.markdown("""
-                <div style="text-align: center; opacity: 0.3;">
-                    <div style="font-size: 50px;">🧵</div>
-                    <p style="color: #D4AF37; font-weight: bold;">Dar El Ghezl</p>
-                    <span style="color: grey;">Locked</span>
-                </div>
-            """, unsafe_allow_html=True)
+        # 2. محاكاة السكاني
+        col_scan, col_info = st.columns([1, 2])
+        with col_scan:
+            scan_place = st.selectbox("Simulate Scan at:", ["Dar El Ghezl", "Bab El Maqam", "The Mellah", "Sidi Ali Bousserghine"])
+            if st.button("📸 Scan QR Code"):
+                now_t = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                st.session_state.visited_places.append({"place": scan_place, "date": now_t})
+                st.session_state.stamps_count = min(10, st.session_state.stamps_count + 1)
+                st.toast(f"Stamp collected for {scan_place}!")
 
-        with col_s3:
-            st.markdown("""
-                <div style="text-align: center; opacity: 0.3;">
-                    <div style="font-size: 50px;">🍒</div>
-                    <p style="color: #D4AF37; font-weight: bold;">Cherry Fest</p>
-                    <span style="color: grey;">Locked</span>
-                </div>
-            """, unsafe_allow_html=True)
-
+        # 3. عرض الطوابع الشخصية
         st.markdown("---")
-        if st.button("📸 Scan QR at Location to Collect Stamp"):
-            st.success("Feature coming soon: This will open your camera to scan QR codes at Dar El Ghezl, The Waterfall, etc.")
+        st.subheader("🗂️ Your Digital Heritage Stamps")
+        
+        for visit in reversed(st.session_state.visited_places):
+            st.markdown(f"""
+                <div style="border: 2px dashed #D4AF37; padding: 15px; border-radius: 10px; margin-bottom: 10px; background-color: #1a1a1a;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <h4 style="margin:0; color: #D4AF37;">📍 {visit['place']}</h4>
+                            <p style="margin:0; color: white; font-size: 14px;"><b>Visitor:</b> {st.session_state.get('visitor_name', 'Guest')}</p>
+                            <p style="margin:0; color: #888; font-size: 12px;">📅 {visit['date']}</p>
+                        </div>
+                        <div style="font-size: 40px;">✅</div>
+                    </div>
+                </div>
+            """, unsafe_allow_html=True)
 
     # نهاية قسم الواجهة الرئيسية
     st.markdown("---")
