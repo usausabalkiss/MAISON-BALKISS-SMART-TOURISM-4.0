@@ -21,21 +21,29 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# 2. قاموس اللغات
+# 2. قاموس اللغات (تمت إضافة نصوص صفرو هنا)
 lang_dict = {
     'English': {
         'welcome': 'Welcome to Maison Balkiss', 'subtitle': 'SMART TOURISM 4.0', 'login_title': 'Visitor Registration',
         'name': 'Full Name', 'email': 'Email / Phone', 'start': 'Start Discovery', 'tab1': '💬 AI Chatbot',
         'tab2': '🗺️ Smart Trail', 'tab3': '📜 Heritage Passport', 'feedback': 'Your Opinion Matters',
         'select_city': 'Select City', 'locate_me': '📍 Locate Me', 'search_place': 'Search for any city or place...',
-        'route_plan': 'Your Smart Tourism Route'
+        'route_plan': 'Your Smart Tourism Route',
+        'sefrou_title': 'Sefrou: The Garden of Morocco & Cherry Capital',
+        'sefrou_desc': 'Known as "Little Jerusalem", Sefrou is one of the oldest cities in Morocco, famous for its coexistence and the UNESCO Cherry Festival.',
+        'stops': ['🌊 Oued Aggai Falls', '🏘️ Historical Mellah', '🚪 Bab El Maqam', '🕌 Sidi Ali Bousserghine', '🕳️ Kahf El Moumen'],
+        'tips': '💡 Tip: Visit in June for the Cherry Festival!'
     },
     'العربية': {
         'welcome': 'مرحباً بكم في ميزون بلقيس', 'subtitle': 'السياحة الذكية 4.0', 'login_title': 'تسجيل الزوار',
         'name': 'الاسم الكامل', 'email': 'البريد الإلكتروني / الهاتف', 'start': 'ابدأ الاكتشاف', 'tab1': '💬 شاتبوت ذكي',
         'tab2': '🗺️ المسار الذكي', 'tab3': '📜 الجواز التراثي', 'feedback': 'رأيكم يهمنا',
         'select_city': 'اختر المدينة', 'locate_me': '📍 تحديد مكاني', 'search_place': 'ابحث عن أي مدينة أو مكان...',
-        'route_plan': 'مسارك السياحي الذكي'
+        'route_plan': 'مسارك السياحي الذكي',
+        'sefrou_title': 'صفرو: حديقة المغرب وعاصمة حب الملوك',
+        'sefrou_desc': 'تلقب بـ "أورشليم الصغيرة"، وهي من أقدم المدن المغربية، مشهورة بتاريخ التعايش ومهرجان حب الملوك المصنف لدى اليونسكو.',
+        'stops': ['🌊 شلال وادي أكاي', '🏘️ الملاح والمدينة العتيقة', '🚪 باب المقام ومجمع الحرف', '🕌 ضريح سيدي علي بوسرغين', '🕳️ كهف المؤمن'],
+        'tips': '💡 نصيحة: زر المدينة في يونيو لحضور مهرجان حب الملوك!'
     }
 }
 
@@ -84,7 +92,7 @@ else:
             try:
                 response = requests.post(url, json={"contents": [{"parts": [{"text": prompt}]}]}, headers={"Content-Type": "application/json"}, timeout=15)
                 res_json = response.json()
-                answer = res_json['candidates'][0]['content']['parts'][0]['text'] if 'candidates' in res_json else "Welcome! I am your Maison Balkiss guide. I am here to help you discover Morocco's hidden gems."
+                answer = res_json['candidates'][0]['content']['parts'][0]['text'] if 'candidates' in res_json else "Welcome! I am your Maison Balkiss guide."
                 st.session_state.chat_history.append({"u": user_query, "a": answer})
             except: st.error("Offline Mode")
         for chat in reversed(st.session_state.chat_history):
@@ -96,7 +104,6 @@ else:
         with col1:
             selected_city = st.selectbox(t['select_city'], ["", "Sefrou (صفرو)", "Figuig (فكيك)", "Tangier (طنجة)"])
         with col2:
-            # إصلاح زر اللوكايشن ليعمل بشكل فوري
             if st.button(t['locate_me']):
                 st.session_state.map_center = [33.8247, -4.8278]
                 st.rerun()
@@ -107,21 +114,17 @@ else:
             try:
                 geolocator = Nominatim(user_agent="balkiss_app_v4")
                 location = geolocator.geocode(search_q)
-                if location: 
-                    st.session_state.map_center = [location.latitude, location.longitude]
-            except: st.warning("Showing last known location.")
+                if location: st.session_state.map_center = [location.latitude, location.longitude]
+            except: st.warning("Showing last location.")
         elif selected_city:
             city_coords = {"Sefrou (صفرو)": [33.8247, -4.8278], "Figuig (فكيك)": [32.1083, -1.2283], "Tangier (طنجة)": [35.7595, -5.8340]}
             st.session_state.map_center = city_coords.get(selected_city, st.session_state.map_center)
 
-        # الخريطة مع طبقة معلومات أغنى لأي مدينة
         m = folium.Map(location=st.session_state.map_center, zoom_start=14, tiles='OpenStreetMap')
         
-        if search_q and not any(city in search_q for city in ["Sefrou", "صفرو", "Figuig", "فكيك", "Tangier", "طنجة"]):
-            folium.Marker(st.session_state.map_center, popup=f"Location: {search_q}", icon=folium.Icon(color='gold', icon='map-marker')).add_to(m)
+        is_sefrou = "Sefrou" in (search_q or selected_city) or "صفرو" in (search_q or selected_city)
 
-        # تعمير الخريطة بنقط حقيقية لصفرو
-        if "Sefrou" in (search_q or selected_city) or "صفرو" in (search_q or selected_city):
+        if is_sefrou:
             folium.Marker([33.8280, -4.8521], popup="Oued Aggai Waterfalls", icon=folium.Icon(color='red', icon='star')).add_to(m)
             folium.Marker([33.8210, -4.8250], popup="Historical Mellah", icon=folium.Icon(color='red', icon='info-sign')).add_to(m)
             folium.Marker([33.8300, -4.8320], popup="Bab El Maqam Square", icon=folium.Icon(color='red', icon='camera')).add_to(m)
@@ -129,8 +132,24 @@ else:
             folium.Marker([33.8315, -4.8260], popup="Restaurant Es-saqia", icon=folium.Icon(color='green', icon='cutlery')).add_to(m)
             folium.Marker([33.7873, -4.8207], popup="Al Iklil Cooperative", icon=folium.Icon(color='blue', icon='leaf')).add_to(m)
             folium.Marker([33.8340, -4.8280], popup="Artisan Cooperative Sefrou", icon=folium.Icon(color='blue', icon='wrench')).add_to(m)
+        elif search_q:
+            folium.Marker(st.session_state.map_center, popup=search_q, icon=folium.Icon(color='gold')).add_to(m)
 
         st_folium(m, width=900, height=450, key="main_map")
+
+        # --- إضافة المعلومات الاحترافية تحت الخريطة ---
+        if is_sefrou:
+            st.markdown(f"## 🍒 {t['sefrou_title']}")
+            st.write(t['sefrou_desc'])
+            
+            c1, c2 = st.columns(2)
+            with c1:
+                st.markdown(f"### 📍 {t['route_plan']}")
+                for stop in t['stops']:
+                    st.markdown(f"* {stop}")
+            with c2:
+                st.info(t['tips'])
+                st.markdown("🍽️ **Local Flavors:** Don't miss the *Sefroui Harira* and local olives in the artisan district.")
 
     with tab3:
         st.header(t['tab3'])
