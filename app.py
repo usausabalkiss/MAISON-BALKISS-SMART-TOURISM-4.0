@@ -28,9 +28,24 @@ def save_user_to_db(name, email, password):
 
 def check_login(email, password):
     if os.path.exists('visitors_log.csv'):
-        df = pd.read_csv('visitors_log.csv', on_bad_lines='skip')
-        user = df[(df['Email'] == email) & (df['Password'] == str(password))]
-        return user.iloc[0]['Name'] if not user.empty else None
+        # skip بتفادي السطور اللي فيها نقص
+       df = pd.read_csv('visitors_log.csv', on_bad_lines='skip')
+        
+        # كنقلبو على السطر اللي فيه هاد الإيميل
+       user = df[df['Email'] == email]
+        
+   if not user.empty:
+            # إيلا كان الحساب قديم ومافيهش عمود Password أصلا
+   if 'Password' not in df.columns:
+       return user.iloc[0]['Name']
+            
+            # إيلا كانت خانة المودباس خاوية (fillna كتخلصنا من المشاكل)
+       actual_password = str(user.iloc[0].get('Password', '')).strip()
+            
+            # إيلا كان المودباس خاوي (حساب قديم) أو كيتطابق مع اللي دخل
+    if actual_password == "nan" or actual_password == "" or actual_password == str(password):
+       return user.iloc[0]['Name']
+                
     return None
 
 def save_stamp_to_db(name, email, place):
