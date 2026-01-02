@@ -91,15 +91,13 @@ else:
 
     tab1, tab2, tab3 = st.tabs([t['tab1'], t['tab2'], t['tab3']])
 
-   with tab1:
+    with tab1:
         st.header(t['tab1'])
         api_key = "AIzaSyBN9cmExKPo5Mn9UAtvdYKohgODPf8hwbA"
-        # استعملنا v1 المستقرة
         url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
 
         user_query = st.chat_input("Ask Maison Balkiss AI...")
         if user_query:
-            # صياغة الطلب بشكل دقيق
             prompt = f"You are a professional Moroccan Virtual Guide for Maison Balkiss. Promote tourism in Sefrou, Figuig, Tangier. Answer in {lang}: {user_query}"
             payload = {
                 "contents": [{
@@ -117,7 +115,6 @@ else:
                         answer = res_json['candidates'][0]['content']['parts'][0]['text']
                         st.session_state.chat_history.append({"u": user_query, "a": answer})
                     else:
-                        # عرض السبب الحقيقي للخطأ باش نعرفوه
                         st.error(f"AI Error: {res_json.get('error', {}).get('message', 'Unknown error')}")
             except Exception as e:
                 st.error(f"Connection Error: {str(e)}")
