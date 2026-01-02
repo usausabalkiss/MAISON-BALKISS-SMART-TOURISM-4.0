@@ -91,7 +91,7 @@ else:
 
     tab1, tab2, tab3 = st.tabs([t['tab1'], t['tab2'], t['tab3']])
 
-   with tab1:
+    with tab1:
         st.header(t['tab1'])
         api_key = "AIzaSyBN9cmExKPo5Mn9UAtvdYKohgODPf8hwbA"
         
@@ -117,7 +117,6 @@ else:
                         answer = res_json['candidates'][0]['content']['parts'][0]['text']
                         st.session_state.chat_history.append({"u": user_query, "a": answer})
                     else:
-                        # إيلا باقي شي مشكل، غايعطينا التفاصيل هنا
                         st.error(f"AI Error: {res_json.get('error', {}).get('message', 'Service not ready')}")
             except Exception as e:
                 st.error(f"Connection Error: {str(e)}")
@@ -126,6 +125,7 @@ else:
             st.markdown(f"**👤 You:** {chat['u']}")
             st.markdown(f"**🏛️ Maison Balkiss:** {chat['a']}")
             st.markdown("---")
+
     with tab2:
         st.header(t['tab2'])
         st.write("Smart Discovery for Sefrou, Figuig, and Tangier is coming next!")
