@@ -96,13 +96,13 @@ else:
         with col1:
             selected_city = st.selectbox(t['select_city'], ["", "Sefrou (صفرو)", "Figuig (فكيك)", "Tangier (طنجة)"])
         with col2:
+            # إصلاح زر اللوكايشن ليعمل بشكل فوري
             if st.button(t['locate_me']):
                 st.session_state.map_center = [33.8247, -4.8278]
-                st.info("Locating...")
+                st.rerun()
 
         search_q = st.text_input(t['search_place'])
 
-        # منطق البحث مع حفظ الموقع
         if search_q:
             try:
                 geolocator = Nominatim(user_agent="balkiss_app_v4")
@@ -114,12 +114,11 @@ else:
             city_coords = {"Sefrou (صفرو)": [33.8247, -4.8278], "Figuig (فكيك)": [32.1083, -1.2283], "Tangier (طنجة)": [35.7595, -5.8340]}
             st.session_state.map_center = city_coords.get(selected_city, st.session_state.map_center)
 
-        # إنشاء الخريطة مع طبقة أسماء أوضح
+        # الخريطة مع طبقة معلومات أغنى لأي مدينة
         m = folium.Map(location=st.session_state.map_center, zoom_start=14, tiles='OpenStreetMap')
         
-        # إضافة نقط ذهبية أوتوماتيكية لأي بحث جديد
         if search_q and not any(city in search_q for city in ["Sefrou", "صفرو", "Figuig", "فكيك", "Tangier", "طنجة"]):
-            folium.Marker(st.session_state.map_center, popup=f"Smart Point: {search_q}", icon=folium.Icon(color='gold', icon='map-marker')).add_to(m)
+            folium.Marker(st.session_state.map_center, popup=f"Location: {search_q}", icon=folium.Icon(color='gold', icon='map-marker')).add_to(m)
 
         # تعمير الخريطة بنقط حقيقية لصفرو
         if "Sefrou" in (search_q or selected_city) or "صفرو" in (search_q or selected_city):
