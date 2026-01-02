@@ -192,7 +192,7 @@ else:
                 st.info(t['tips'])
                 st.markdown("🍽️ **Local Flavors:** Don't miss the *Sefroui Harira*.")
 
-   with tab3:
+    with tab3:
         st.header(f"📜 {t['tab3']}")
         user_stamps = load_user_stamps(st.session_state.visitor_email)
         stamps_count = len(user_stamps)
@@ -218,7 +218,7 @@ else:
         with c_scan1:
             loc_to_scan = st.selectbox("Current Location:", ["Dar El Ghezl", "Bab El Maqam", "The Mellah", "Oued Aggai Falls"])
         with c_scan2:
-            qr_verify = st.text_input("Verification Code", placeholder="Code from QR")
+            qr_verify = st.text_input("Verification Code", placeholder="Code from QR", key="qr_input_v")
         
         if st.button("🌟 Verify & Stamp"):
             if qr_verify == "1234": 
@@ -226,9 +226,9 @@ else:
                 st.success(f"Verified! Stamp added for {loc_to_scan}")
                 st.rerun()
             else:
-                st.error("Invalid Code! Please scan the actual QR at the location.")
+                st.error("Invalid Code!")
 
-        # 3. عرض الطوابع البريدية
+        # 3. عرض الطوابع البريدية الأثرية
         st.markdown("---")
         st.subheader("🏺 Your Digital Heritage Stamps")
         cols = st.columns(2)
@@ -254,7 +254,7 @@ else:
                     </div>
                 ''', unsafe_allow_html=True)
 
-        # 4. بون الخصم الذهبي (مصلح للتحميل PDF)
+        # 4. بون الخصم الذهبي
         if stamps_count >= 10:
             st.markdown(f"""
                 <div style="background: linear-gradient(45deg, #D4AF37, #000); padding: 25px; border-radius: 15px; text-align: center; border: 2px solid #D4AF37; margin-top: 30px;">
@@ -264,13 +264,16 @@ else:
                         <img src="https://api.qrserver.com/v1/create-qr-code/?size=90x90&data=BALKISS-VOUCHER-{st.session_state.visitor_name}" width="90">
                     </div>
                     <p style="color: #D4AF37; font-size: 12px;">Issued for: {st.session_state.visitor_name} | {datetime.now().strftime("%Y-%m-%d")}</p>
-                    
                     <button onclick="window.print()" style="background-color: #D4AF37; color: black; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; cursor: pointer;">📥 DOWNLOAD VOUCHER (PDF)</button>
                 </div>
             """, unsafe_allow_html=True)
 
+    # --- قسم الفيدباك (تم تفعيله) ---
     st.markdown("---")
     st.subheader(t['feedback'])
-    st.text_area("Your Feedback...")
-    st.button("Submit Feedback")
+    user_msg = st.text_area("Your Feedback...", key="feedback_area_f")
+    if st.button("Submit Feedback"):
+        if save_feedback(st.session_state.visitor_name, st.session_state.visitor_email, user_msg):
+            st.success("Success! Message sent to Maison Balkiss.")
+
     st.markdown("<center>© 2026 MAISON BALKISS - Smart Tourism 4.0</center>", unsafe_allow_html=True)
