@@ -30,7 +30,11 @@ lang_dict = {
         'tab1': '💬 AI Chatbot',
         'tab2': '🗺️ Smart Trail',
         'tab3': '📜 Heritage Passport',
-        'feedback': 'Your Opinion Matters'
+        'feedback': 'Your Opinion Matters',
+        'select_city': 'Select City',
+        'locate_me': '📍 Locate Me',
+        'search_place': 'Search for a specific place...',
+        'route_plan': 'Your Smart Tourism Route'
     },
     'العربية': {
         'welcome': 'مرحباً بكم في ميزون بلقيس',
@@ -42,7 +46,11 @@ lang_dict = {
         'tab1': '💬 شاتبوت ذكي',
         'tab2': '🗺️ المسار الذكي',
         'tab3': '📜 الجواز التراثي',
-        'feedback': 'رأيكم يهمنا'
+        'feedback': 'رأيكم يهمنا',
+        'select_city': 'اختر المدينة',
+        'locate_me': '📍 تحديد مكاني',
+        'search_place': 'ابحث عن مكان محدد...',
+        'route_plan': 'مسارك السياحي الذكي'
     }
 }
 
@@ -109,18 +117,13 @@ else:
                     if 'candidates' in res_json:
                         answer = res_json['candidates'][0]['content']['parts'][0]['text']
                     else:
-                        # نظام ذكاء محلي مطور (Smart Knowledge Base)
                         q_low = user_query.lower()
-                        if any(x in q_low for x in ["sefrou", "صفرو", "cherry", "حب الملوك"]):
-                            answer = "🍒 **Sefrou:** Known as the 'Garden of Morocco'. You must visit its UNESCO Cherry Festival and the beautiful waterfalls (Oued Aggai). Don't miss the historical Mellah!" if lang=='English' else "🍒 **صفرو:** مدينة حب الملوك! يجب زيارة مهرجانها المصنف ضمن اليونسكو والشلالات الرائعة. لا تفوت زيارة الملاح القديم."
-                        elif any(x in q_low for x in ["figuig", "فكيك", "oasis", "واحة"]):
-                            answer = "🌴 **Figuig:** A majestic oasis with 7 ancient Ksars. It's famous for high-quality dates (Aziza) and its unique desert architecture." if lang=='English' else "🌴 **فكيك:** واحة مهيبة تضم 7 قصور قديمة. تشتهر بتمر 'العزيزة' ومعمارها الصحراوي الفريد."
-                        elif any(x in q_low for x in ["tangier", "طنجة", "hercules", "هرقل"]):
-                            answer = "🌊 **Tangier:** The Bride of the North where the Atlantic meets the Mediterranean. Explore Hercules Caves and the Kasbah museum." if lang=='English' else "🌊 **طنجة:** عروس الشمال حيث يلتقي الأطلسي بالمتوسط. استكشف مغارة هرقل ومتحف القصبة."
-                        elif any(x in q_low for x in ["hello", "hi", "مرحبا", "سلام"]):
-                            answer = "Hello! I am your Maison Balkiss Guide. How can I help you discover Morocco today?" if lang=='English' else "مرحباً! أنا مرشد ميزون بلقيس. كيف يمكنني مساعدتك في اكتشاف سحر المغرب اليوم؟"
+                        if any(x in q_low for x in ["sefrou", "صفرو"]):
+                            answer = "🍒 **Sefrou:** Known for the Cherry Festival and waterfalls. Visit the ancient Mellah!" if lang=='English' else "🍒 **صفرو:** مدينة حب الملوك! يجب زيارة مهرجانها المصنف ضمن اليونسكو والشلالات الرائعة."
+                        elif any(x in q_low for x in ["figuig", "فكيك"]):
+                            answer = "🌴 **Figuig:** A majestic oasis with 7 ancient Ksars." if lang=='English' else "🌴 **فكيك:** واحة مهيبة تضم 7 قصور قديمة."
                         else:
-                            answer = "As your Maison Balkiss guide, I recommend checking our 'Smart Trail' for detailed routes in Sefrou, Figuig, and Tangier!" if lang=='English' else "كمرشدك في ميزون بلقيس، أنصحك بالاطلاع على 'المسار الذكي' لمشاهدة مسارات رائعة في صفرو، فكيك، وطنجة."
+                            answer = "I am your Maison Balkiss guide. How can I help you discover Morocco?" if lang=='English' else "أنا مرشد ميزون بلقيس. كيف يمكنني مساعدتك؟"
                     
                     st.session_state.chat_history.append({"u": user_query, "a": answer})
             except:
@@ -133,7 +136,37 @@ else:
 
     with tab2:
         st.header(t['tab2'])
-        st.write("Smart Discovery for Sefrou, Figuig, and Tangier is coming next!")
+        
+        # خيارات التحكم في التاب 2
+        col1, col2 = st.columns([2, 1])
+        with col1:
+            selected_city = st.selectbox(t['select_city'], ["", "Sefrou (صفرو)", "Figuig (فكيك)", "Tangier (طنجة)"])
+        with col2:
+            if st.button(t['locate_me']):
+                selected_city = "Sefrou (صفرو)" # مثال للمحاكاة
+                st.info("Location detected: Sefrou")
+
+        search_q = st.text_input(t['search_place'])
+
+        if selected_city or search_q:
+            st.subheader(f"🗺️ {t['route_plan']}")
+            
+            # محاكاة عرض المسار الذكي
+            if "Sefrou" in selected_city or "صفرو" in search_q:
+                st.markdown("""
+                * **Stop 1:** Waterfall Oued Aggai (Natural Heritage)
+                * **Stop 2:** Historical Mellah (Cultural Heritage)
+                * **Stop 3:** Cherry Cooperative (Local Craft & Economy)
+                """)
+                st.image("https://images.unsplash.com/photo-1590059392253-90d65b74102c?auto=format&fit=crop&q=80&w=800", caption="Smart Map: Sefrou Route")
+            elif "Figuig" in selected_city:
+                st.markdown("""
+                * **Stop 1:** Ksar Zenaga (Traditional Architecture)
+                * **Stop 2:** Date Palm Oasis (Agriculture Heritage)
+                * **Stop 3:** Traditional Irrigation System (Intelligence Heritage)
+                """)
+            else:
+                st.info("Displaying general smart tourism points near your location.")
 
     with tab3:
         st.header(t['tab3'])
