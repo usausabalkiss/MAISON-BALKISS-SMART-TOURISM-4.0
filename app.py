@@ -29,7 +29,6 @@ def save_user_to_db(name, email, password):
 
 def check_login(email, password):
     if os.path.exists('visitors_log.csv'):
-        # قراءة ذكية تتعامل مع البيانات القديمة والجديدة
         df = pd.read_csv('visitors_log.csv', on_bad_lines='skip')
         user = df[(df['Email'] == email) & (df['Password'] == str(password))]
         return user.iloc[0]['Name'] if not user.empty else None
@@ -47,7 +46,16 @@ def load_user_stamps(email):
         return user_stamps.to_dict('records')
     return []
 
-# 2. قاموس اللغات (لم يتغير)
+# وظيفة حفظ الفيدباك (جديدة)
+def save_feedback(name, email, message):
+    if message:
+        now = datetime.now().strftime("%Y-%m-%d %H:%M")
+        df = pd.DataFrame([[now, name, email, message]], columns=['Date', 'Name', 'Email', 'Message'])
+        df.to_csv('feedback_log.csv', mode='a', header=not os.path.exists('feedback_log.csv'), index=False)
+        return True
+    return False
+
+# 2. قاموس اللغات
 lang_dict = {
     'English': {
         'welcome': 'Welcome to Maison Balkiss', 'subtitle': 'SMART TOURISM 4.0', 'login_title': 'Visitor Registration',
@@ -78,7 +86,7 @@ if 'logged_in' not in st.session_state: st.session_state.logged_in = False
 if 'chat_history' not in st.session_state: st.session_state.chat_history = []
 if 'map_center' not in st.session_state: st.session_state.map_center = [33.8247, -4.8278]
 
-# 4. القائمة الجانبية (الأدمن مصلح لقراءة كل البيانات)
+# 4. القائمة الجانبية (الأدمن مصلح لقراءة كل البيانات بما فيها الفيدباك)
 with st.sidebar:
     st.title("MAISON BALKISS")
     lang = st.selectbox("🌐 Language", ['English', 'العربية'])
@@ -88,21 +96,26 @@ with st.sidebar:
         if st.text_input("Password", type="password", key="admin_key") == "BALKISS2024":
             st.success("Admin Verified")
             st.subheader("📊 Detailed Activity Report")
-            # قراءة ذكية للطوابع
+            
+            # عرض الطوابع
             if os.path.exists('stamps_log.csv'):
                 st.write("📍 User Stamps Activity:")
                 st.dataframe(pd.read_csv('stamps_log.csv'))
+            
+            # عرض الفيدباك (جديد)
+            st.subheader("💬 Visitor Feedback")
+            if os.path.exists('feedback_log.csv'):
+                st.dataframe(pd.read_csv('feedback_log.csv'))
             else:
-                st.write("No stamps collected yet.")
+                st.write("No feedback yet.")
             
             st.markdown("---")
             st.write("👥 Visitor Accounts:")
             if os.path.exists('visitors_log.csv'):
-                # تجاوز السطور المعطوبة لقراءة البيانات القديمة والجديدة معا
                 try: st.dataframe(pd.read_csv('visitors_log.csv', on_bad_lines='skip'))
                 except: st.write("Updating database format...")
 
-# 5. واجهة الدخول / التسجيل (مجهودك المحفوظ)
+# 5. واجهة الدخول / التسجيل
 if not st.session_state.logged_in:
     tab_log, tab_reg = st.tabs([t['login_title'], "📝 New Account"])
     
@@ -175,20 +188,11 @@ else:
             st.session_state.map_center = city_coords.get(selected_city, st.session_state.map_center)
 
         m = folium.Map(location=st.session_state.map_center, zoom_start=14, tiles='OpenStreetMap')
-        
         is_sefrou = "Sefrou" in (search_q or selected_city) or "صفرو" in (search_q or selected_city)
-
         if is_sefrou:
             folium.Marker([33.8280, -4.8521], popup="Oued Aggai Waterfalls", icon=folium.Icon(color='red', icon='star')).add_to(m)
             folium.Marker([33.8210, -4.8250], popup="Historical Mellah", icon=folium.Icon(color='red', icon='info-sign')).add_to(m)
             folium.Marker([33.8300, -4.8320], popup="Bab El Maqam Square", icon=folium.Icon(color='red', icon='camera')).add_to(m)
-            folium.Marker([33.8323, -4.8268], popup="Flame & Fork", icon=folium.Icon(color='green', icon='cutlery')).add_to(m)
-            folium.Marker([33.8315, -4.8260], popup="Restaurant Es-saqia", icon=folium.Icon(color='green', icon='cutlery')).add_to(m)
-            folium.Marker([33.7873, -4.8207], popup="Al Iklil Cooperative", icon=folium.Icon(color='blue', icon='leaf')).add_to(m)
-            folium.Marker([33.8340, -4.8280], popup="Artisan Cooperative Sefrou", icon=folium.Icon(color='blue', icon='wrench')).add_to(m)
-        elif search_q:
-            folium.Marker(st.session_state.map_center, popup=search_q, icon=folium.Icon(color='gold')).add_to(m)
-
         st_folium(m, width=900, height=450, key="main_map")
 
         if is_sefrou:
@@ -197,18 +201,16 @@ else:
             c1, c2 = st.columns(2)
             with c1:
                 st.markdown(f"### 📍 {t['route_plan']}")
-                for stop in t['stops']:
-                    st.markdown(f"* {stop}")
+                for stop in t['stops']: st.markdown(f"* {stop}")
             with c2:
                 st.info(t['tips'])
-                st.markdown("🍽️ **Local Flavors:** Don't miss the *Sefroui Harira* and local olives in the artisan district.")
+                st.markdown("🍽️ **Local Flavors:** Don't miss the *Sefroui Harira*.")
 
     with tab3:
         st.header(f"📜 {t['tab3']}")
         user_stamps = load_user_stamps(st.session_state.visitor_email)
         stamps_count = len(user_stamps)
 
-        # 1. باسبور أمباسادور هماوي
         st.markdown(f"""
             <div style="border: 3px double #D4AF37; padding: 25px; border-radius: 15px; background: linear-gradient(145deg, #111, #000); text-align: center;">
                 <h2 style="color: #D4AF37; margin-bottom: 5px;">HERITAGE AMBASSADOR PASSPORT</h2>
@@ -222,66 +224,45 @@ else:
         """, unsafe_allow_html=True)
 
         st.progress(min(stamps_count / 10, 1.0))
-
-        # 2. التحقق الذكي
         st.subheader("📸 Collect New Stamp")
-        c_scan1, c_scan2 = st.columns([2, 1])
-        with c_scan1:
-            loc_to_scan = st.selectbox("Current Location:", ["Dar El Ghezl", "Bab El Maqam", "The Mellah", "Oued Aggai Falls"])
-        with c_scan2:
-            qr_verify = st.text_input("Verification Code", placeholder="Code from QR")
+        loc_to_scan = st.selectbox("Current Location:", ["Dar El Ghezl", "Bab El Maqam", "The Mellah", "Oued Aggai Falls"])
+        qr_verify = st.text_input("Verification Code", placeholder="Code from QR")
         
         if st.button("🌟 Verify & Stamp"):
             if qr_verify == "1234": 
                 save_stamp_to_db(st.session_state.visitor_name, st.session_state.visitor_email, loc_to_scan)
                 st.success(f"Verified! Stamp added for {loc_to_scan}")
                 st.rerun()
-            else:
-                st.error("Invalid Code! Please scan the actual QR at the location.")
+            else: st.error("Invalid Code!")
 
-        # 3. عرض الطوابع البريدية
         st.markdown("---")
         st.subheader("🏺 Your Digital Heritage Stamps")
         cols = st.columns(2)
         for i, visit in enumerate(reversed(user_stamps)):
             with cols[i % 2]:
                 st.markdown(f'''
-                    <div style="background-color: #fdf5e6; padding: 15px; border: 3px dashed #b8860b; border-radius: 2px; margin-bottom: 20px; position: relative; box-shadow: 5px 5px 15px rgba(0,0,0,0.3); font-family: 'Courier New', Courier, monospace; min-height: 180px;">
-                        <div style="border: 1px solid #d2b48c; padding: 10px;">
-                            <span style="float: right; color: #b8860b; font-weight: bold; font-size: 18px;">10<br><small>DH</small></span>
-                            <h3 style="margin:0; color: #333; text-transform: uppercase;">{visit['Place']}</h3>
-                            <p style="font-size: 10px; color: #8b4513; margin: 5px 0; font-weight: bold;">ROYAUME DU MAROC - HERITAGE</p>
-                            <hr style="border-top: 1px solid #d2b48c; margin: 10px 0;">
-                            <p style="font-size: 13px; color: #000; margin: 5px 0;"><b>HOLDER:</b> {visit['Name']}</p>
-                            <p style="font-size: 11px; color: #000; margin: 0;"><b>DATE:</b> {visit['Date']}</p>
-                        </div>
-                        <div style="position: absolute; bottom: 10px; right: 10px; width: 85px; height: 85px; border: 4px double rgba(139, 0, 0, 0.7); border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; transform: rotate(-15deg); background: rgba(255, 255, 255, 0.1);">
-                            <div style="border: 1px solid rgba(139, 0, 0, 0.4); border-radius: 50%; width: 70px; height: 70px; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.1;">
-                                <span style="font-size: 6px; color: rgba(139, 0, 0, 0.7); font-weight: bold; margin-bottom: 2px;">★ ★ ★</span>
-                                <span style="font-size: 10px; color: rgba(139, 0, 0, 0.8); font-weight: 900; text-align: center;">MAISON<br>BALKISS</span>
-                                <span style="font-size: 6px; color: rgba(139, 0, 0, 0.7); font-weight: bold; margin-top: 2px;">OFFICIAL</span>
-                            </div>
-                        </div>
+                    <div style="background-color: #fdf5e6; padding: 15px; border: 3px dashed #b8860b; border-radius: 2px; margin-bottom: 20px; position: relative; color: black; min-height: 150px;">
+                        <h3>{visit['Place']}</h3>
+                        <p>DATE: {visit['Date']}</p>
                     </div>
                 ''', unsafe_allow_html=True)
 
-        # 4. بون الخصم الذهبي (مصلح للتحميل PDF)
         if stamps_count >= 10:
             st.markdown(f"""
                 <div style="background: linear-gradient(45deg, #D4AF37, #000); padding: 25px; border-radius: 15px; text-align: center; border: 2px solid #D4AF37; margin-top: 30px;">
                     <h1 style="color: #D4AF37; margin:0;">AMBASSADOR VOUCHER</h1>
-                    <p style="color: white; font-size: 18px;">10% DISCOUNT ON YOUR NEXT VISIT</p>
-                    <div style="background: white; padding: 10px; width: 110px; margin: 15px auto; border-radius: 5px;">
-                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=90x90&data=BALKISS-VOUCHER-{st.session_state.visitor_name}" width="90">
-                    </div>
-                    <p style="color: #D4AF37; font-size: 12px;">Issued for: {st.session_state.visitor_name} | {datetime.now().strftime("%Y-%m-%d")}</p>
-                    
                     <button onclick="window.print()" style="background-color: #D4AF37; color: black; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; cursor: pointer;">📥 DOWNLOAD VOUCHER (PDF)</button>
                 </div>
             """, unsafe_allow_html=True)
 
+    # --- قسم الفيدباك المطور (تم الربط بنجاح) ---
     st.markdown("---")
     st.subheader(t['feedback'])
-    st.text_area("Your Feedback...")
-    st.button("Submit Feedback")
+    user_msg = st.text_area("Your Feedback...", key="feedback_input")
+    if st.button("Submit Feedback"):
+        if save_feedback(st.session_state.visitor_name, st.session_state.visitor_email, user_msg):
+            st.success("Thank you! Your feedback has been sent to Maison Balkiss.")
+        else:
+            st.warning("Please write your feedback first.")
+
     st.markdown("<center>© 2026 MAISON BALKISS - Smart Tourism 4.0</center>", unsafe_allow_html=True)
