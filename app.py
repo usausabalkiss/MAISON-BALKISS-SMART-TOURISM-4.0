@@ -102,7 +102,14 @@ with st.sidebar:
             if os.path.exists('visitors_log.csv'):
                 st.subheader("👥 Visitors")
                 st.dataframe(pd.read_csv('visitors_log.csv', on_bad_lines='skip'))
-
+# مثال لزيادة زر التحميل في قسم الأدمن
+            if os.path.exists('visitors_log.csv'):
+               df_vis = pd.read_csv('visitors_log.csv')
+               st.download_button(
+               label="📥 تحميل قائمة الزوار (CSV)",
+               data=df_vis.to_csv(index=False).encode('utf-8'),
+               file_name='balkiss_visitors.csv',
+               mime='text/csv', )
 # 5. واجهة الدخول
 if not st.session_state.logged_in:
     tab_log, tab_reg = st.tabs([t['login_title'], "📝 New Account"])
