@@ -91,21 +91,36 @@ else:
 
     tab1, tab2, tab3 = st.tabs([t['tab1'], t['tab2'], t['tab3']])
 
-    with tab1:
+   with tab1:
         st.header(t['tab1'])
         api_key = "AIzaSyBN9cmExKPo5Mn9UAtvdYKohgODPf8hwbA"
-        url = f"https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key={api_key}"
+        # استعملنا v1 المستقرة
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
 
         user_query = st.chat_input("Ask Maison Balkiss AI...")
         if user_query:
+            # صياغة الطلب بشكل دقيق
             prompt = f"You are a professional Moroccan Virtual Guide for Maison Balkiss. Promote tourism in Sefrou, Figuig, Tangier. Answer in {lang}: {user_query}"
-            payload = {"contents": [{"parts": [{"text": prompt}]}]}
+            payload = {
+                "contents": [{
+                    "parts": [{"text": prompt}]
+                }]
+            }
+            headers = {"Content-Type": "application/json"}
+            
             try:
-                response = requests.post(url, json=payload, timeout=15)
-                answer = response.json()['candidates'][0]['content']['parts'][0]['text']
-                st.session_state.chat_history.append({"u": user_query, "a": answer})
-            except:
-                st.error("AI is briefly offline.")
+                with st.spinner('Maison Balkiss is thinking...'):
+                    response = requests.post(url, json=payload, headers=headers, timeout=15)
+                    res_json = response.json()
+                    
+                    if 'candidates' in res_json:
+                        answer = res_json['candidates'][0]['content']['parts'][0]['text']
+                        st.session_state.chat_history.append({"u": user_query, "a": answer})
+                    else:
+                        # عرض السبب الحقيقي للخطأ باش نعرفوه
+                        st.error(f"AI Error: {res_json.get('error', {}).get('message', 'Unknown error')}")
+            except Exception as e:
+                st.error(f"Connection Error: {str(e)}")
 
         for chat in reversed(st.session_state.chat_history):
             st.markdown(f"**👤 You:** {chat['u']}")
