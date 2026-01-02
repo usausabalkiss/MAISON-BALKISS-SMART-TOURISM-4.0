@@ -75,7 +75,6 @@ if not st.session_state.logged_in:
     v_contact = st.text_input(t['email'])
     if st.button(t['start']):
         if v_name and v_contact:
-            # تسجيل البيانات
             new_entry = f"{datetime.now()},{v_name},{v_contact},{lang}\n"
             with open('visitors_log.csv', 'a') as f:
                 f.write(new_entry)
@@ -95,8 +94,8 @@ else:
         st.header(t['tab1'])
         api_key = "AIzaSyBN9cmExKPo5Mn9UAtvdYKohgODPf8hwbA"
         
-        # التعديل: استعملنا gemini-pro (Text Only) المستقر جداً
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={api_key}"
+        # التعديل النهائي لعام 2026: استخدام الرابط الرسمي المستقر v1 مع Flash
+        url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
 
         user_query = st.chat_input("Ask Maison Balkiss AI...")
         if user_query:
@@ -117,7 +116,7 @@ else:
                         answer = res_json['candidates'][0]['content']['parts'][0]['text']
                         st.session_state.chat_history.append({"u": user_query, "a": answer})
                     else:
-                        st.error(f"AI Error: {res_json.get('error', {}).get('message', 'Service not ready')}")
+                        st.error(f"AI Status: {res_json.get('error', {}).get('message', 'Service Update')}")
             except Exception as e:
                 st.error(f"Connection Error: {str(e)}")
 
@@ -137,5 +136,5 @@ else:
     st.markdown("---")
     st.subheader(t['feedback'])
     st.text_area("Your Feedback...")
-    st.button("Submit")
+    st.button("Submit Feedback")
     st.markdown("<center>© 2024 MAISON BALKISS - Smart Tourism 4.0</center>", unsafe_allow_html=True)
