@@ -22,24 +22,39 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- وظائف قاعدة البيانات (لحفظ المعلومات من الضياع) ---
-def save_stamp_to_db(name, place):
+# --- وظائف قاعدة البيانات (تطوير نظام الدخول والتقارير) ---
+def save_user_to_db(name, email, password):
+    # حفظ المستخدم بالمودباس لضمان الأمان
+    df = pd.DataFrame([[datetime.now(), name, email, password]], columns=['Date', 'Name', 'Email', 'Password'])
+    df.to_csv('visitors_log.csv', mode='a', header=not os.path.exists('visitors_log.csv'), index=False)
+
+def check_login(email, password):
+    if os.path.exists('visitors_log.csv'):
+        df = pd.read_csv('visitors_log.csv')
+        # التحقق من الإيميل والمودباس معاً
+        user = df[(df['Email'] == email) & (df['Password'] == str(password))]
+        return user.iloc[0]['Name'] if not user.empty else None
+    return None
+
+def save_stamp_to_db(name, email, place):
     now = datetime.now().strftime("%Y-%m-%d %H:%M")
-    df = pd.DataFrame([[name, place, now]], columns=['Name', 'Place', 'Date'])
+    # تسجيل تحركات الزائر بالتفصيل لتقرير الأدمن
+    df = pd.DataFrame([[name, email, place, now]], columns=['Name', 'Email', 'Place', 'Date'])
     df.to_csv('stamps_log.csv', mode='a', header=not os.path.exists('stamps_log.csv'), index=False)
 
-def load_user_stamps(name):
+def load_user_stamps(email):
     if os.path.exists('stamps_log.csv'):
         df = pd.read_csv('stamps_log.csv')
-        user_stamps = df[df['Name'] == name]
+        # تحميل طوابع المستخدم عن طريق إيميله الخاص
+        user_stamps = df[df['Email'] == email]
         return user_stamps.to_dict('records')
     return []
 
-# 2. قاموس اللغات
+# 2. قاموس اللغات (لم يتغير)
 lang_dict = {
     'English': {
         'welcome': 'Welcome to Maison Balkiss', 'subtitle': 'SMART TOURISM 4.0', 'login_title': 'Visitor Registration',
-        'name': 'Full Name', 'email': 'Email / Phone', 'start': 'Start Discovery', 'tab1': '💬 AI Chatbot',
+        'name': 'Full Name', 'email': 'Email / Phone', 'pass': 'Password', 'start': 'Start Discovery', 'tab1': '💬 AI Chatbot',
         'tab2': '🗺️ Smart Trail', 'tab3': '📜 Heritage Passport', 'feedback': 'Your Opinion Matters',
         'select_city': 'Select City', 'locate_me': '📍 Locate Me', 'search_place': 'Search for any city or place...',
         'route_plan': 'Your Smart Tourism Route',
@@ -50,7 +65,7 @@ lang_dict = {
     },
     'العربية': {
         'welcome': 'مرحباً بكم في ميزون بلقيس', 'subtitle': 'السياحة الذكية 4.0', 'login_title': 'تسجيل الزوار',
-        'name': 'الاسم الكامل', 'email': 'البريد الإلكتروني / الهاتف', 'start': 'ابدأ الاكتشاف', 'tab1': '💬 شاتبوت ذكي',
+        'name': 'الاسم الكامل', 'email': 'البريد الإلكتروني / الهاتف', 'pass': 'كلمة المرور', 'start': 'ابدأ الاكتشاف', 'tab1': '💬 شاتبوت ذكي',
         'tab2': '🗺️ المسار الذكي', 'tab3': '📜 الجواز التراثي', 'feedback': 'رأيكم يهمنا',
         'select_city': 'اختر المدينة', 'locate_me': '📍 تحديد مكاني', 'search_place': 'ابحث عن أي مدينة أو مكان...',
         'route_plan': 'مسارك السياحي الذكي',
@@ -66,7 +81,7 @@ if 'logged_in' not in st.session_state: st.session_state.logged_in = False
 if 'chat_history' not in st.session_state: st.session_state.chat_history = []
 if 'map_center' not in st.session_state: st.session_state.map_center = [33.8247, -4.8278]
 
-# 4. القائمة الجانبية
+# 4. القائمة الجانبية (تقرير الأدمن المفصل)
 with st.sidebar:
     st.title("MAISON BALKISS")
     lang = st.selectbox("🌐 Language", ['English', 'العربية'])
@@ -75,21 +90,43 @@ with st.sidebar:
     with st.expander("🔐 Admin Area"):
         if st.text_input("Password", type="password") == "BALKISS2024":
             st.success("Admin Verified")
-            try: st.dataframe(pd.read_csv('visitors_log.csv', names=['Date', 'Name', 'Contact', 'Lang']))
+            st.subheader("📊 Detailed Activity Report")
+            if os.path.exists('stamps_log.csv'):
+                st.dataframe(pd.read_csv('stamps_log.csv'))
+            else:
+                st.write("No stamps collected yet.")
+            st.markdown("---")
+            st.write("Visitor Registration Log:")
+            try: st.dataframe(pd.read_csv('visitors_log.csv'))
             except: st.write("No logs yet.")
 
-# 5. واجهة الدخول
+# 5. واجهة الدخول / التسجيل المحدثة
 if not st.session_state.logged_in:
-    st.header(f"🏛️ {t['login_title']}")
-    v_name = st.text_input(t['name'])
-    v_contact = st.text_input(t['email'])
-    if st.button(t['start']):
-        if v_name and v_contact:
-            with open('visitors_log.csv', 'a') as f: f.write(f"{datetime.now()},{v_name},{v_contact},{lang}\n")
-            st.session_state.logged_in = True
-            st.session_state.visitor_name = v_name
-            st.rerun()
-        else: st.warning("Please fill your details.")
+    tab_log, tab_reg = st.tabs([t['login_title'], "📝 New Account"])
+    
+    with tab_reg:
+        st.subheader("Register your account")
+        v_name = st.text_input(t['name'], key="reg_name")
+        v_email = st.text_input(t['email'], key="reg_email")
+        v_pass = st.text_input(t['pass'], type="password", key="reg_pass")
+        if st.button("Create Account"):
+            if v_name and v_email and v_pass:
+                save_user_to_db(v_name, v_email, v_pass)
+                st.success("Account created! Now go to Login tab.")
+            else: st.warning("Please fill all details.")
+
+    with tab_log:
+        st.subheader("Login")
+        log_email = st.text_input(t['email'], key="log_email")
+        log_pass = st.text_input(t['pass'], type="password", key="log_pass")
+        if st.button(t['start']):
+            name = check_login(log_email, log_pass)
+            if name:
+                st.session_state.logged_in = True
+                st.session_state.visitor_name = name
+                st.session_state.visitor_email = log_email
+                st.rerun()
+            else: st.error("Invalid email or password.")
 
 # 6. الواجهة الرئيسية
 else:
@@ -166,13 +203,12 @@ else:
 
     with tab3:
         st.header(f"📜 {t['tab3']}")
-        
-        user_stamps = load_user_stamps(st.session_state.visitor_name)
+        user_stamps = load_user_stamps(st.session_state.visitor_email)
         stamps_count = len(user_stamps)
 
         # 1. باسبور أمباسادور هماوي
         st.markdown(f"""
-            <div id="passport-section" style="border: 3px double #D4AF37; padding: 25px; border-radius: 15px; background: linear-gradient(145deg, #111, #000); text-align: center;">
+            <div style="border: 3px double #D4AF37; padding: 25px; border-radius: 15px; background: linear-gradient(145deg, #111, #000); text-align: center;">
                 <h2 style="color: #D4AF37; margin-bottom: 5px;">HERITAGE AMBASSADOR PASSPORT</h2>
                 <p style="color: #D4AF37; font-style: italic;">جواز سفر سفير التراث</p>
                 <hr style="border-color: #D4AF37;">
@@ -195,7 +231,7 @@ else:
         
         if st.button("🌟 Verify & Stamp"):
             if qr_verify == "1234": 
-                save_stamp_to_db(st.session_state.visitor_name, loc_to_scan)
+                save_stamp_to_db(st.session_state.visitor_name, st.session_state.visitor_email, loc_to_scan)
                 st.success(f"Verified! Stamp added for {loc_to_scan}")
                 st.rerun()
             else:
@@ -227,7 +263,7 @@ else:
                     </div>
                 ''', unsafe_allow_html=True)
 
-        # 4. بون الخصم مع إصلاح زر التحميل (PDF) باستخدام نافذة الطباعة
+        # 4. بون الخصم الذهبي مع زر التحميل المصلح
         if stamps_count >= 10:
             st.markdown(f"""
                 <div style="background: linear-gradient(45deg, #D4AF37, #000); padding: 25px; border-radius: 15px; text-align: center; border: 2px solid #D4AF37; margin-top: 30px;">
@@ -238,11 +274,7 @@ else:
                     </div>
                     <p style="color: #D4AF37; font-size: 12px;">Issued for: {st.session_state.visitor_name} | {datetime.now().strftime("%Y-%m-%d")}</p>
                     
-                    <div style="margin-top: 15px;">
-                        <button onclick="window.print()" style="background-color: #D4AF37; color: black; border: none; padding: 12px 25px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 16px; box-shadow: 0 4px 15px rgba(212,175,55,0.3);">
-                            📥 DOWNLOAD PASSPORT (PDF)
-                        </button>
-                    </div>
+                    <button onclick="window.print()" style="background-color: #D4AF37; color: black; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; cursor: pointer;">📥 DOWNLOAD VOUCHER (PDF)</button>
                 </div>
             """, unsafe_allow_html=True)
 
