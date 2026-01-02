@@ -51,10 +51,9 @@ lang_dict = {
 if 'logged_in' not in st.session_state: st.session_state.logged_in = False
 if 'chat_history' not in st.session_state: st.session_state.chat_history = []
 if 'map_center' not in st.session_state: st.session_state.map_center = [33.8247, -4.8278]
-# نظام النقاط للجواز
 if 'stamps_count' not in st.session_state: st.session_state.stamps_count = 1
 if 'visited_places' not in st.session_state: 
-    st.session_state.visited_places = [{"place": "Oued Aggai Falls", "date": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}]
+    st.session_state.visited_places = [{"place": "Oued Aggai Falls", "date": datetime.now().strftime("%Y-%m-%d %H:%M")}]
 
 # 4. القائمة الجانبية
 with st.sidebar:
@@ -97,7 +96,7 @@ else:
             try:
                 response = requests.post(url, json={"contents": [{"parts": [{"text": prompt}]}]}, headers={"Content-Type": "application/json"}, timeout=15)
                 res_json = response.json()
-                answer = res_json['candidates'][0]['content']['parts'][0]['text'] if 'candidates' in res_json else "Welcome! I am your Maison Balkiss guide."
+                answer = res_json['candidates'][0]['content']['parts'][0]['text'] if 'candidates' in res_json else "Welcome!"
                 st.session_state.chat_history.append({"u": user_query, "a": answer})
             except: st.error("Offline Mode")
         for chat in reversed(st.session_state.chat_history):
@@ -157,43 +156,69 @@ else:
     with tab3:
         st.header(f"📜 {t['tab3']}")
         
-        # 1. حالة الجواز والتقدم
-        st.markdown(f"### 🛡️ Status: {st.session_state.stamps_count}/10 Visits")
+        # 1. باسبور أمباسادور هماوي
+        st.markdown(f"""
+            <div style="border: 3px double #D4AF37; padding: 25px; border-radius: 15px; background: linear-gradient(145deg, #111, #000); text-align: center;">
+                <h2 style="color: #D4AF37; margin-bottom: 5px;">HERITAGE AMBASSADOR PASSPORT</h2>
+                <p style="color: #D4AF37; font-style: italic;">جواز سفر سفير التراث</p>
+                <hr style="border-color: #D4AF37;">
+                <div style="display: flex; justify-content: space-around; margin-top: 20px;">
+                    <div><p style="color: #D4AF37; font-size: 12px;">HOLDER</p><h3 style="color: white;">{st.session_state.get('visitor_name', 'Explorer')}</h3></div>
+                    <div><p style="color: #D4AF37; font-size: 12px;">STAMPS</p><h3 style="color: white;">{st.session_state.stamps_count} / 10</h3></div>
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
+
         st.progress(st.session_state.stamps_count / 10)
-        
-        if st.session_state.stamps_count >= 10:
-            st.balloons()
-            st.success("🎉 Congratulations! You are now a Heritage Ambassador. Enjoy 20% discount at Maison Balkiss!")
 
-        # 2. محاكاة السكاني
-        col_scan, col_info = st.columns([1, 2])
-        with col_scan:
-            scan_place = st.selectbox("Simulate Scan at:", ["Dar El Ghezl", "Bab El Maqam", "The Mellah", "Sidi Ali Bousserghine"])
-            if st.button("📸 Scan QR Code"):
-                now_t = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                st.session_state.visited_places.append({"place": scan_place, "date": now_t})
+        # 2. التحقق الذكي (منع الغش)
+        st.subheader("📸 Collect New Stamp")
+        c_scan1, c_scan2 = st.columns([2, 1])
+        with c_scan1:
+            loc_to_scan = st.selectbox("Current Location:", ["Dar El Ghezl", "Bab El Maqam", "The Mellah", "Oued Aggai Falls"])
+        with c_scan2:
+            qr_verify = st.text_input("Verification Code", placeholder="Code from QR")
+        
+        if st.button("🌟 Verify & Stamp"):
+            if qr_verify == "1234": # الكود السري للتحقق
+                now_t = datetime.now().strftime("%Y-%m-%d %H:%M")
+                st.session_state.visited_places.append({"place": loc_to_scan, "date": now_t})
                 st.session_state.stamps_count = min(10, st.session_state.stamps_count + 1)
-                st.toast(f"Stamp collected for {scan_place}!")
+                st.success(f"Verified! Stamp added for {loc_to_scan}")
+                st.rerun()
+            else:
+                st.error("Invalid Code! Please scan the actual QR at the location.")
 
-        # 3. عرض الطوابع الشخصية
+        # 3. عرض الطوابع البريدية الشخصية
         st.markdown("---")
-        st.subheader("🗂️ Your Digital Heritage Stamps")
-        
-        for visit in reversed(st.session_state.visited_places):
-            st.markdown(f"""
-                <div style="border: 2px dashed #D4AF37; padding: 15px; border-radius: 10px; margin-bottom: 10px; background-color: #1a1a1a;">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <div>
-                            <h4 style="margin:0; color: #D4AF37;">📍 {visit['place']}</h4>
-                            <p style="margin:0; color: white; font-size: 14px;"><b>Visitor:</b> {st.session_state.get('visitor_name', 'Guest')}</p>
-                            <p style="margin:0; color: #888; font-size: 12px;">📅 {visit['date']}</p>
-                        </div>
-                        <div style="font-size: 40px;">✅</div>
+        st.subheader("🗂️ Your Digital Postage Stamps")
+        cols = st.columns(2)
+        for i, visit in enumerate(reversed(st.session_state.visited_places)):
+            with cols[i % 2]:
+                st.markdown(f"""
+                    <div style="background-color: #fff; padding: 10px; border: 2px dashed #D4AF37; margin-bottom: 10px; color: #000; position: relative;">
+                        <h4 style="margin:0;">{visit['place']}</h4>
+                        <p style="font-size: 11px; color: #666;">OFFICIAL HERITAGE STAMP</p>
+                        <hr style="margin: 5px 0;">
+                        <p style="font-size: 12px; margin:0;"><b>Visitor:</b> {st.session_state.get('visitor_name')}</p>
+                        <p style="font-size: 10px; margin:0;">📅 {visit['date']}</p>
+                        <div style="position: absolute; bottom: 5px; right: 10px; border: 2px solid rgba(212, 175, 55, 0.5); border-radius: 50%; width: 45px; height: 45px; font-size: 8px; font-weight: bold; color: rgba(212, 175, 55, 0.5); text-align: center; display: flex; align-items: center; justify-content: center; transform: rotate(-15deg);">BALKISS<br>SEFROU</div>
                     </div>
+                """, unsafe_allow_html=True)
+
+        # 4. بون الخصم الذهبي
+        if st.session_state.stamps_count >= 10:
+            st.markdown(f"""
+                <div style="background: linear-gradient(45deg, #D4AF37, #000); padding: 25px; border-radius: 15px; text-align: center; border: 2px solid #D4AF37;">
+                    <h1 style="color: #D4AF37;">EXCLUSIVE AMBASSADOR VOUCHER</h1>
+                    <p style="color: white; font-size: 18px;">10% DISCOUNT ON YOUR NEXT VISIT</p>
+                    <div style="background: white; padding: 10px; width: 110px; margin: 15px auto; border-radius: 5px;">
+                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=90x90&data=BALKISS-PROMO-{st.session_state.get('visitor_name')}" width="90">
+                    </div>
+                    <p style="color: #D4AF37; font-size: 12px;">Valid until: Dec 2026 | Issued: {datetime.now().strftime("%Y-%m-%d")}</p>
                 </div>
             """, unsafe_allow_html=True)
 
-    # نهاية قسم الواجهة الرئيسية
     st.markdown("---")
     st.subheader(t['feedback'])
     st.text_area("Your Feedback...")
