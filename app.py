@@ -21,7 +21,7 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# 2. قاموس اللغات (تمت إضافة نصوص صفرو هنا)
+# 2. قاموس اللغات
 lang_dict = {
     'English': {
         'welcome': 'Welcome to Maison Balkiss', 'subtitle': 'SMART TOURISM 4.0', 'login_title': 'Visitor Registration',
@@ -115,7 +115,7 @@ else:
                 geolocator = Nominatim(user_agent="balkiss_app_v4")
                 location = geolocator.geocode(search_q)
                 if location: st.session_state.map_center = [location.latitude, location.longitude]
-            except: st.warning("Showing last location.")
+            except: st.warning("Showing last known location.")
         elif selected_city:
             city_coords = {"Sefrou (صفرو)": [33.8247, -4.8278], "Figuig (فكيك)": [32.1083, -1.2283], "Tangier (طنجة)": [35.7595, -5.8340]}
             st.session_state.map_center = city_coords.get(selected_city, st.session_state.map_center)
@@ -137,7 +137,6 @@ else:
 
         st_folium(m, width=900, height=450, key="main_map")
 
-        # --- إضافة المعلومات الاحترافية تحت الخريطة ---
         if is_sefrou:
             st.markdown(f"## 🍒 {t['sefrou_title']}")
             st.write(t['sefrou_desc'])
@@ -151,7 +150,7 @@ else:
                 st.info(t['tips'])
                 st.markdown("🍽️ **Local Flavors:** Don't miss the *Sefroui Harira* and local olives in the artisan district.")
 
-   with tab3:
+    with tab3:
         st.header(f"📜 {t['tab3']}")
         
         # تصميم الجواز التراثي
@@ -176,7 +175,6 @@ else:
         st.write("")
         st.subheader("Your Collected Stamps / طوابعك التراثية")
         
-        # عرض الطوابع (Stamps) على شكل أعمدة
         col_s1, col_s2, col_s3 = st.columns(3)
         
         with col_s1:
@@ -207,6 +205,12 @@ else:
             """, unsafe_allow_html=True)
 
         st.markdown("---")
-        # زر لمحاكاة أخذ طابع (مثلا عن طريق QR Code مستقبلاً)
         if st.button("📸 Scan QR at Location to Collect Stamp"):
             st.success("Feature coming soon: This will open your camera to scan QR codes at Dar El Ghezl, The Waterfall, etc.")
+
+    # نهاية قسم الواجهة الرئيسية
+    st.markdown("---")
+    st.subheader(t['feedback'])
+    st.text_area("Your Feedback...")
+    st.button("Submit Feedback")
+    st.markdown("<center>© 2026 MAISON BALKISS - Smart Tourism 4.0</center>", unsafe_allow_html=True)
