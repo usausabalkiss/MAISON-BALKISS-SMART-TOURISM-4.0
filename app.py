@@ -7,7 +7,7 @@ import folium
 from streamlit_folium import st_folium 
 from geopy.geocoders import Nominatim 
 
-# 1. إعدادات الصفحة والهوية البصرية (محفوظة حرفياً)
+# 1. إعدادات الصفحة والهوية البصرية
 st.set_page_config(page_title="MAISON BALKISS SMART TOURISM 4.0", layout="wide")
 
 st.markdown("""
@@ -53,7 +53,7 @@ def save_feedback(name, email, message):
         return True
     return False
 
-# 2. قاموس اللغات (محفوظ)
+# 2. قاموس اللغات
 lang_dict = {
     'English': {
         'welcome': 'Welcome to Maison Balkiss', 'subtitle': 'SMART TOURISM 4.0', 'login_title': 'Visitor Registration',
@@ -84,7 +84,7 @@ if 'logged_in' not in st.session_state: st.session_state.logged_in = False
 if 'chat_history' not in st.session_state: st.session_state.chat_history = []
 if 'map_center' not in st.session_state: st.session_state.map_center = [33.8247, -4.8278]
 
-# 4. القائمة الجانبية (الأدمن)
+# 4. القائمة الجانبية
 with st.sidebar:
     st.title("MAISON BALKISS")
     lang = st.selectbox("🌐 Language", ['English', 'العربية'])
@@ -107,16 +107,16 @@ with st.sidebar:
 if not st.session_state.logged_in:
     tab_log, tab_reg = st.tabs([t['login_title'], "📝 New Account"])
     with tab_reg:
-        v_name = st.text_input(t['name'], key="reg_n")
-        v_email = st.text_input(t['email'], key="reg_e")
-        v_pass = st.text_input(t['pass'], type="password", key="reg_p")
+        v_name = st.text_input(t['name'], key="reg_name")
+        v_email = st.text_input(t['email'], key="reg_email")
+        v_pass = st.text_input(t['pass'], type="password", key="reg_pass")
         if st.button("Create Account"):
             if v_name and v_email and v_pass:
                 save_user_to_db(v_name, v_email, v_pass)
                 st.success("Account created!")
     with tab_log:
-        log_email = st.text_input(t['email'], key="log_e")
-        log_pass = st.text_input(t['pass'], type="password", key="log_p")
+        log_email = st.text_input(t['email'], key="log_email")
+        log_pass = st.text_input(t['pass'], type="password", key="log_pass")
         if st.button(t['start']):
             name = check_login(log_email, log_pass)
             if name:
@@ -132,12 +132,10 @@ else:
     st.subheader(t['subtitle'])
     tab1, tab2, tab3 = st.tabs([t['tab1'], t['tab2'], t['tab3']])
 
-    # --- TAB 1: إصلاح الشاتبوت بالرابط الجديد ---
     with tab1:
         st.header(t['tab1'])
         api_key = "AIzaSyBN9cmExKPo5Mn9UAtvdYKohgODPf8hwbA"
         url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
-        
         user_query = st.chat_input("Ask Maison Balkiss AI...")
         if user_query:
             payload = {"contents": [{"parts": [{"text": f"You are a professional Moroccan Virtual Guide for Maison Balkiss. Answer in {lang}: {user_query}"}]}]}
@@ -150,20 +148,20 @@ else:
                     answer = "I'm here to help! Could you please repeat?"
                 st.session_state.chat_history.append({"u": user_query, "a": answer})
             except:
-                st.error("AI is resting now.")
-                
+                st.error("Offline Mode")
         for chat in reversed(st.session_state.chat_history):
             st.markdown(f"**👤 You:** {chat['u']}\n\n**🏛️ Maison Balkiss:** {chat['a']}\n---")
 
-    # --- TAB 2: الخريطة الأصلية بجميع الماركرز ---
     with tab2:
         st.header(t['tab2'])
         col1, col2 = st.columns([2, 1])
-        with col1: selected_city = st.selectbox(t['select_city'], ["", "Sefrou (صفرو)", "Figuig (فكيك)", "Tangier (طنجة)"])
-        with col2: 
+        with col1:
+            selected_city = st.selectbox(t['select_city'], ["", "Sefrou (صفرو)", "Figuig (فكيك)", "Tangier (طنجة)"])
+        with col2:
             if st.button(t['locate_me']):
                 st.session_state.map_center = [33.8247, -4.8278]
                 st.rerun()
+
         search_q = st.text_input(t['search_place'])
         if search_q:
             try:
@@ -171,7 +169,10 @@ else:
                 location = geolocator.geocode(search_q)
                 if location: st.session_state.map_center = [location.latitude, location.longitude]
             except: st.warning("Showing last known location.")
-        
+        elif selected_city:
+            city_coords = {"Sefrou (صفرو)": [33.8247, -4.8278], "Figuig (فكيك)": [32.1083, -1.2283], "Tangier (طنجة)": [35.7595, -5.8340]}
+            st.session_state.map_center = city_coords.get(selected_city, st.session_state.map_center)
+
         m = folium.Map(location=st.session_state.map_center, zoom_start=14, tiles='OpenStreetMap')
         is_sefrou = "Sefrou" in (search_q or selected_city) or "صفرو" in (search_q or selected_city)
         if is_sefrou:
@@ -195,12 +196,12 @@ else:
                 st.info(t['tips'])
                 st.markdown("🍽️ **Local Flavors:** Don't miss the *Sefroui Harira*.")
 
-    # --- TAB 3: الباسبور والكاشي وبون الخصم QR ---
     with tab3:
         st.header(f"📜 {t['tab3']}")
         user_stamps = load_user_stamps(st.session_state.visitor_email)
         stamps_count = len(user_stamps)
 
+        # 1. باسبور أمباسادور هماوي
         st.markdown(f"""
             <div style="border: 3px double #D4AF37; padding: 25px; border-radius: 15px; background: linear-gradient(145deg, #111, #000); text-align: center;">
                 <h2 style="color: #D4AF37; margin-bottom: 5px;">HERITAGE AMBASSADOR PASSPORT</h2>
@@ -214,24 +215,31 @@ else:
         """, unsafe_allow_html=True)
 
         st.progress(min(stamps_count / 10, 1.0))
+
+        # 2. التحقق الذكي
         st.subheader("📸 Collect New Stamp")
-        c1, c2 = st.columns([2, 1])
-        with c1: loc_to_scan = st.selectbox("Location:", ["Dar El Ghezl", "Bab El Maqam", "The Mellah", "Oued Aggai Falls"])
-        with c2: qr_verify = st.text_input("Code", placeholder="1234", key="qr_v")
+        c_scan1, c_scan2 = st.columns([2, 1])
+        with c_scan1:
+            loc_to_scan = st.selectbox("Current Location:", ["Dar El Ghezl", "Bab El Maqam", "The Mellah", "Oued Aggai Falls"])
+        with c_scan2:
+            qr_verify = st.text_input("Verification Code", placeholder="Code from QR", key="qr_input_code")
         
         if st.button("🌟 Verify & Stamp"):
             if qr_verify == "1234":
                 save_stamp_to_db(st.session_state.visitor_name, st.session_state.visitor_email, loc_to_scan)
-                st.success("Verified!")
+                st.success(f"Verified! Stamp added for {loc_to_scan}")
                 st.rerun()
+            else:
+                st.error("Invalid Code!")
 
+        # 3. عرض الطوابع البريدية
         st.markdown("---")
         st.subheader("🏺 Your Digital Heritage Stamps")
         cols = st.columns(2)
         for i, visit in enumerate(reversed(user_stamps)):
             with cols[i % 2]:
                 st.markdown(f'''
-                    <div style="background-color: #fdf5e6; padding: 15px; border: 3px dashed #b8860b; border-radius: 2px; margin-bottom: 20px; position: relative; color: black; box-shadow: 5px 5px 15px rgba(0,0,0,0.3); font-family: 'Courier New', Courier, monospace; min-height: 180px;">
+                    <div style="background-color: #fdf5e6; padding: 15px; border: 3px dashed #b8860b; border-radius: 2px; margin-bottom: 20px; position: relative; box-shadow: 5px 5px 15px rgba(0,0,0,0.3); font-family: 'Courier New', Courier, monospace; min-height: 180px;">
                         <div style="border: 1px solid #d2b48c; padding: 10px;">
                             <span style="float: right; color: #b8860b; font-weight: bold; font-size: 18px;">10<br><small>DH</small></span>
                             <h3 style="margin:0; color: #333; text-transform: uppercase;">{visit['Place']}</h3>
@@ -242,4 +250,33 @@ else:
                         </div>
                         <div style="position: absolute; bottom: 10px; right: 10px; width: 85px; height: 85px; border: 4px double rgba(139, 0, 0, 0.7); border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; transform: rotate(-15deg); background: rgba(255, 255, 255, 0.1);">
                             <div style="border: 1px solid rgba(139, 0, 0, 0.4); border-radius: 50%; width: 70px; height: 70px; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.1;">
-                                <span style="font-size: 6px; color: rgba(
+                                <span style="font-size: 6px; color: rgba(139, 0, 0, 0.7); font-weight: bold; margin-bottom: 2px;">★ ★ ★</span>
+                                <span style="font-size: 10px; color: rgba(139, 0, 0, 0.8); font-weight: 900; text-align: center;">MAISON<br>BALKISS</span>
+                                <span style="font-size: 6px; color: rgba(139, 0, 0, 0.7); font-weight: bold; margin-top: 2px;">OFFICIAL</span>
+                            </div>
+                        </div>
+                    </div>
+                ''', unsafe_allow_html=True)
+
+        # 4. بون الخصم الذهبي
+        if stamps_count >= 10:
+            st.markdown(f"""
+                <div style="background: linear-gradient(45deg, #D4AF37, #000); padding: 25px; border-radius: 15px; text-align: center; border: 2px solid #D4AF37; margin-top: 30px;">
+                    <h1 style="color: #D4AF37; margin:0;">AMBASSADOR VOUCHER</h1>
+                    <p style="color: white; font-size: 18px;">10% DISCOUNT ON YOUR NEXT VISIT</p>
+                    <div style="background: white; padding: 10px; width: 110px; margin: 15px auto; border-radius: 5px;">
+                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=90x90&data=BALKISS-VOUCHER-{st.session_state.visitor_name}" width="90">
+                    </div>
+                    <p style="color: #D4AF37; font-size: 12px;">Issued for: {st.session_state.visitor_name} | {datetime.now().strftime("%Y-%m-%d")}</p>
+                    <button onclick="window.print()" style="background-color: #D4AF37; color: black; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; cursor: pointer;">📥 DOWNLOAD VOUCHER (PDF)</button>
+                </div>
+            """, unsafe_allow_html=True)
+
+    st.markdown("---")
+    st.subheader(t['feedback'])
+    user_msg = st.text_area("Your Feedback...", key="feedback_area_unique")
+    if st.button("Submit Feedback"):
+        if save_feedback(st.session_state.visitor_name, st.session_state.visitor_email, user_msg):
+            st.success("Success! Feedback recorded.")
+
+    st.markdown("<center>© 2026 MAISON BALKISS - Smart Tourism 4.0</center>", unsafe_allow_html=True)
