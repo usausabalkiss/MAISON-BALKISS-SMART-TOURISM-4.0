@@ -109,16 +109,18 @@ else:
                     if 'candidates' in res_json:
                         answer = res_json['candidates'][0]['content']['parts'][0]['text']
                     else:
-                        # نظام ذكاء محلي بديل (Fallback) لضمان اشتغال الموقع ديما
+                        # نظام ذكاء محلي مطور (Smart Knowledge Base)
                         q_low = user_query.lower()
-                        if any(x in q_low for x in ["sefrou", "صفرو"]):
-                            answer = "🍒 **Sefrou:** Known for the Cherry Festival and waterfalls. Visit the ancient Mellah!"
-                        elif any(x in q_low for x in ["figuig", "فكيك"]):
-                            answer = "🌴 **Figuig:** A majestic oasis with 7 ancient Ksars and the best Aziza dates."
-                        elif any(x in q_low for x in ["tangier", "طنجة"]):
-                            answer = "🌊 **Tangier:** The white city where the Atlantic meets the Mediterranean."
+                        if any(x in q_low for x in ["sefrou", "صفرو", "cherry", "حب الملوك"]):
+                            answer = "🍒 **Sefrou:** Known as the 'Garden of Morocco'. You must visit its UNESCO Cherry Festival and the beautiful waterfalls (Oued Aggai). Don't miss the historical Mellah!" if lang=='English' else "🍒 **صفرو:** مدينة حب الملوك! يجب زيارة مهرجانها المصنف ضمن اليونسكو والشلالات الرائعة. لا تفوت زيارة الملاح القديم."
+                        elif any(x in q_low for x in ["figuig", "فكيك", "oasis", "واحة"]):
+                            answer = "🌴 **Figuig:** A majestic oasis with 7 ancient Ksars. It's famous for high-quality dates (Aziza) and its unique desert architecture." if lang=='English' else "🌴 **فكيك:** واحة مهيبة تضم 7 قصور قديمة. تشتهر بتمر 'العزيزة' ومعمارها الصحراوي الفريد."
+                        elif any(x in q_low for x in ["tangier", "طنجة", "hercules", "هرقل"]):
+                            answer = "🌊 **Tangier:** The Bride of the North where the Atlantic meets the Mediterranean. Explore Hercules Caves and the Kasbah museum." if lang=='English' else "🌊 **طنجة:** عروس الشمال حيث يلتقي الأطلسي بالمتوسط. استكشف مغارة هرقل ومتحف القصبة."
+                        elif any(x in q_low for x in ["hello", "hi", "مرحبا", "سلام"]):
+                            answer = "Hello! I am your Maison Balkiss Guide. How can I help you discover Morocco today?" if lang=='English' else "مرحباً! أنا مرشد ميزون بلقيس. كيف يمكنني مساعدتك في اكتشاف سحر المغرب اليوم؟"
                         else:
-                            answer = "Welcome! I am your Maison Balkiss guide. I am currently learning more about Morocco's hidden gems to help you better."
+                            answer = "As your Maison Balkiss guide, I recommend checking our 'Smart Trail' for detailed routes in Sefrou, Figuig, and Tangier!" if lang=='English' else "كمرشدك في ميزون بلقيس، أنصحك بالاطلاع على 'المسار الذكي' لمشاهدة مسارات رائعة في صفرو، فكيك، وطنجة."
                     
                     st.session_state.chat_history.append({"u": user_query, "a": answer})
             except:
@@ -141,4 +143,4 @@ else:
     st.subheader(t['feedback'])
     st.text_area("Your Feedback...")
     st.button("Submit Feedback")
-    st.markdown("<center>© 2024 MAISON BALKISS - Smart Tourism 4.0</center>", unsafe_allow_html=True)
+    st.markdown("<center>© 2026 MAISON BALKISS - Smart Tourism 4.0</center>", unsafe_allow_html=True)
