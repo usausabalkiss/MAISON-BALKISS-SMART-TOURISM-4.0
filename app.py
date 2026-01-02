@@ -164,49 +164,36 @@ else:
         for chat in reversed(st.session_state.chat_history):
             st.markdown(f"**👤 You:** {chat['u']}\n\n**🏛️ Maison Balkiss:** {chat['a']}\n---")
 
-    with tab2:
+   with tab2:
         st.header(t['tab2'])
-        col1, col2 = st.columns([2, 1])
-        with col1:
-            selected_city = st.selectbox(t['select_city'], ["", "Sefrou (صفرو)", "Figuig (فكيك)", "Tangier (طنجة)"])
-        with col2:
-            if st.button(t['locate_me']):
-                st.session_state.map_center = [33.8247, -4.8278]
-                st.rerun()
-
-        search_q = st.text_input(t['search_place'])
-        if search_q:
-            try:
-                geolocator = Nominatim(user_agent="balkiss_app_v4")
-                location = geolocator.geocode(search_q)
-                if location: st.session_state.map_center = [location.latitude, location.longitude]
-            except: st.warning("Showing last known location.")
-        elif selected_city:
-            city_coords = {"Sefrou (صفرو)": [33.8247, -4.8278], "Figuig (فكيك)": [32.1083, -1.2283], "Tangier (طنجة)": [35.7595, -5.8340]}
-            st.session_state.map_center = city_coords.get(selected_city, st.session_state.map_center)
-
-        m = folium.Map(location=st.session_state.map_center, zoom_start=14, tiles='OpenStreetMap')
-        is_sefrou = "Sefrou" in (search_q or selected_city) or "صفرو" in (search_q or selected_city)
-        if is_sefrou:
-            folium.Marker([33.8280, -4.8521], popup="Oued Aggai Waterfalls", icon=folium.Icon(color='red', icon='star')).add_to(m)
-            folium.Marker([33.8210, -4.8250], popup="Historical Mellah", icon=folium.Icon(color='red', icon='info-sign')).add_to(m)
-            folium.Marker([33.8300, -4.8320], popup="Bab El Maqam Square", icon=folium.Icon(color='red', icon='camera')).add_to(m)
-            folium.Marker([33.8323, -4.8268], popup="Flame & Fork", icon=folium.Icon(color='green', icon='cutlery')).add_to(m)
-            folium.Marker([33.8315, -4.8260], popup="Restaurant Es-saqia", icon=folium.Icon(color='green', icon='cutlery')).add_to(m)
-            folium.Marker([33.7873, -4.8207], popup="Al Iklil Cooperative", icon=folium.Icon(color='blue', icon='leaf')).add_to(m)
-            folium.Marker([33.8340, -4.8280], popup="Artisan Cooperative Sefrou", icon=folium.Icon(color='blue', icon='wrench')).add_to(m)
-        st_folium(m, width=900, height=450, key="main_map")
-
-        if is_sefrou:
-            st.markdown(f"## 🍒 {t['sefrou_title']}")
-            st.write(t['sefrou_desc'])
+        
+        # التأكد من وجود ملف البيانات
+        if os.path.exists('landmarks_data.csv'):
+            df_geo = pd.read_csv('landmarks_data.csv')
+            
+            # تقسيم الشاشة لـ 2 أعمدة
             c1, c2 = st.columns(2)
             with c1:
-                st.markdown(f"### 📍 {t['route_plan']}")
-                for stop in t['stops']: st.markdown(f"* {stop}")
-            with c2:
-                st.info(t['tips'])
-                st.markdown("🍽️ **Local Flavors:** Don't miss the *Sefroui Harira*.")
+                # اختيار الجهة
+                sel_reg = st.selectbox("📍 الجهة", [""] + sorted(df_geo['Region'].unique().tolist()))
+            
+            if sel_reg:
+                with c2:
+                    # اختيار المدينة
+                    cities = sorted(df_geo[df_geo['Region'] == sel_reg]['City'].unique().tolist())
+                    sel_city = st.selectbox("🏙️ المدينة", [""] + cities)
+                
+                if sel_city:
+                    # جلب معلومات المدينة
+                    city_info = df_geo[df_geo['City'] == sel_city].iloc[0]
+                    st.info(f"✨ {city_info['Description']}")
+                    
+                    # الخريطة (هادي هي اللي خاصها تكون محاذية للـ if)
+                    m = folium.Map(location=[city_info['Lat'], city_info['Lon']], zoom_start=12)
+                    folium.Marker([city_info['Lat'], city_info['Lon']], popup=city_info['Place']).add_to(m)
+                    st_folium(m, width=900, height=450, key="map_"+sel_city)
+        else:
+            st.warning("⚠️ ملف landmarks_data.csv مفقود!")
 
     with tab3:
         st.header(f"📜 {t['tab3']}")
