@@ -22,24 +22,39 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- وظائف قاعدة البيانات (لحفظ المعلومات من الضياع) ---
-def save_stamp_to_db(name, place):
+# --- وظائف قاعدة البيانات (تطوير نظام الدخول والتقارير) ---
+def save_user_to_db(name, email, password):
+    # حفظ المستخدم بالمودباس لضمان الأمان
+    df = pd.DataFrame([[datetime.now(), name, email, password]], columns=['Date', 'Name', 'Email', 'Password'])
+    df.to_csv('visitors_log.csv', mode='a', header=not os.path.exists('visitors_log.csv'), index=False)
+
+def check_login(email, password):
+    if os.path.exists('visitors_log.csv'):
+        df = pd.read_csv('visitors_log.csv')
+        # التحقق من الإيميل والمودباس معاً
+        user = df[(df['Email'] == email) & (df['Password'] == str(password))]
+        return user.iloc[0]['Name'] if not user.empty else None
+    return None
+
+def save_stamp_to_db(name, email, place):
     now = datetime.now().strftime("%Y-%m-%d %H:%M")
-    df = pd.DataFrame([[name, place, now]], columns=['Name', 'Place', 'Date'])
+    # تسجيل تحركات الزائر بالتفصيل لتقرير الأدمن
+    df = pd.DataFrame([[name, email, place, now]], columns=['Name', 'Email', 'Place', 'Date'])
     df.to_csv('stamps_log.csv', mode='a', header=not os.path.exists('stamps_log.csv'), index=False)
 
-def load_user_stamps(name):
+def load_user_stamps(email):
     if os.path.exists('stamps_log.csv'):
         df = pd.read_csv('stamps_log.csv')
-        user_stamps = df[df['Name'] == name]
+        # تحميل طوابع المستخدم عن طريق إيميله الخاص
+        user_stamps = df[df['Email'] == email]
         return user_stamps.to_dict('records')
     return []
 
-# 2. قاموس اللغات
+# 2. قاموس اللغات (لم يتغير)
 lang_dict = {
     'English': {
         'welcome': 'Welcome to Maison Balkiss', 'subtitle': 'SMART TOURISM 4.0', 'login_title': 'Visitor Registration',
-        'name': 'Full Name', 'email': 'Email / Phone', 'start': 'Start Discovery', 'tab1': '💬 AI Chatbot',
+        'name': 'Full Name', 'email': 'Email / Phone', 'pass': 'Password', 'start': 'Start Discovery', 'tab1': '💬 AI Chatbot',
         'tab2': '🗺️ Smart Trail', 'tab3': '📜 Heritage Passport', 'feedback': 'Your Opinion Matters',
         'select_city': 'Select City', 'locate_me': '📍 Locate Me', 'search_place': 'Search for any city or place...',
         'route_plan': 'Your Smart Tourism Route',
@@ -50,7 +65,7 @@ lang_dict = {
     },
     'العربية': {
         'welcome': 'مرحباً بكم في ميزون بلقيس', 'subtitle': 'السياحة الذكية 4.0', 'login_title': 'تسجيل الزوار',
-        'name': 'الاسم الكامل', 'email': 'البريد الإلكتروني / الهاتف', 'start': 'ابدأ الاكتشاف', 'tab1': '💬 شاتبوت ذكي',
+        'name': 'الاسم الكامل', 'email': 'البريد الإلكتروني / الهاتف', 'pass': 'كلمة المرور', 'start': 'ابدأ الاكتشاف', 'tab1': '💬 شاتبوت ذكي',
         'tab2': '🗺️ المسار الذكي', 'tab3': '📜 الجواز التراثي', 'feedback': 'رأيكم يهمنا',
         'select_city': 'اختر المدينة', 'locate_me': '📍 تحديد مكاني', 'search_place': 'ابحث عن أي مدينة أو مكان...',
         'route_plan': 'مسارك السياحي الذكي',
@@ -66,7 +81,7 @@ if 'logged_in' not in st.session_state: st.session_state.logged_in = False
 if 'chat_history' not in st.session_state: st.session_state.chat_history = []
 if 'map_center' not in st.session_state: st.session_state.map_center = [33.8247, -4.8278]
 
-# 4. القائمة الجانبية
+# 4. القائمة الجانبية (تقرير الأدمن المفصل)
 with st.sidebar:
     st.title("MAISON BALKISS")
     lang = st.selectbox("🌐 Language", ['English', 'العربية'])
@@ -75,23 +90,46 @@ with st.sidebar:
     with st.expander("🔐 Admin Area"):
         if st.text_input("Password", type="password") == "BALKISS2024":
             st.success("Admin Verified")
-            try: st.dataframe(pd.read_csv('visitors_log.csv', names=['Date', 'Name', 'Contact', 'Lang']))
+            st.subheader("📊 Detailed Activity Report")
+            # الأدمن دابا كيشوف حتى البلايص اللي زاروها السياح
+            if os.path.exists('stamps_log.csv'):
+                st.dataframe(pd.read_csv('stamps_log.csv'))
+            else:
+                st.write("No stamps collected yet.")
+            st.markdown("---")
+            st.write("Visitor Registration Log:")
+            try: st.dataframe(pd.read_csv('visitors_log.csv'))
             except: st.write("No logs yet.")
 
-# 5. واجهة الدخول
+# 5. واجهة الدخول / التسجيل المحدثة
 if not st.session_state.logged_in:
-    st.header(f"🏛️ {t['login_title']}")
-    v_name = st.text_input(t['name'])
-    v_contact = st.text_input(t['email'])
-    if st.button(t['start']):
-        if v_name and v_contact:
-            with open('visitors_log.csv', 'a') as f: f.write(f"{datetime.now()},{v_name},{v_contact},{lang}\n")
-            st.session_state.logged_in = True
-            st.session_state.visitor_name = v_name
-            st.rerun()
-        else: st.warning("Please fill your details.")
+    tab_log, tab_reg = st.tabs([t['login_title'], "📝 New Account"])
+    
+    with tab_reg:
+        st.subheader("Register your account")
+        v_name = st.text_input(t['name'], key="reg_name")
+        v_email = st.text_input(t['email'], key="reg_email")
+        v_pass = st.text_input(t['pass'], type="password", key="reg_pass")
+        if st.button("Create Account"):
+            if v_name and v_email and v_pass:
+                save_user_to_db(v_name, v_email, v_pass)
+                st.success("Account created! Now go to Login tab.")
+            else: st.warning("Please fill all details.")
 
-# 6. الواجهة الرئيسية
+    with tab_log:
+        st.subheader("Login")
+        log_email = st.text_input(t['email'], key="log_email")
+        log_pass = st.text_input(t['pass'], type="password", key="log_pass")
+        if st.button(t['start']):
+            name = check_login(log_email, log_pass)
+            if name:
+                st.session_state.logged_in = True
+                st.session_state.visitor_name = name
+                st.session_state.visitor_email = log_email
+                st.rerun()
+            else: st.error("Invalid email or password.")
+
+# 6. الواجهة الرئيسية (لم يتغير فيها شيء أصلي)
 else:
     st.title(f"👑 {t['welcome']}")
     st.subheader(t['subtitle'])
@@ -167,8 +205,8 @@ else:
     with tab3:
         st.header(f"📜 {t['tab3']}")
         
-        # تحميل الطوابع المحفوظة من قاعدة البيانات
-        user_stamps = load_user_stamps(st.session_state.visitor_name)
+        # تحميل الطوابع من قاعدة البيانات لضمان عدم ضياع المعلومات
+        user_stamps = load_user_stamps(st.session_state.visitor_email)
         stamps_count = len(user_stamps)
 
         # 1. باسبور أمباسادور هماوي
@@ -186,7 +224,7 @@ else:
 
         st.progress(min(stamps_count / 10, 1.0))
 
-        # 2. التحقق الذكي (منع الغش)
+        # 2. التحقق الذكي (منع الغش - محاكاة QR)
         st.subheader("📸 Collect New Stamp")
         c_scan1, c_scan2 = st.columns([2, 1])
         with c_scan1:
@@ -196,7 +234,7 @@ else:
         
         if st.button("🌟 Verify & Stamp"):
             if qr_verify == "1234": 
-                save_stamp_to_db(st.session_state.visitor_name, loc_to_scan)
+                save_stamp_to_db(st.session_state.visitor_name, st.session_state.visitor_email, loc_to_scan)
                 st.success(f"Verified! Stamp added for {loc_to_scan}")
                 st.rerun()
             else:
@@ -212,17 +250,17 @@ else:
                     <div style="background-color: #fdf5e6; padding: 15px; border: 3px dashed #b8860b; border-radius: 2px; margin-bottom: 20px; position: relative; box-shadow: 5px 5px 15px rgba(0,0,0,0.3); font-family: 'Courier New', Courier, monospace; min-height: 180px;">
                         <div style="border: 1px solid #d2b48c; padding: 10px;">
                             <span style="float: right; color: #b8860b; font-weight: bold; font-size: 18px;">10<br><small>DH</small></span>
-                            <h3 style="margin:0; color: #333; text-transform: uppercase; font-size: 16px;">{visit['Place']}</h3>
+                            <h3 style="margin:0; color: #333; text-transform: uppercase;">{visit['Place']}</h3>
                             <p style="font-size: 10px; color: #8b4513; margin: 5px 0; font-weight: bold;">ROYAUME DU MAROC - HERITAGE</p>
-                            <hr style="border-top: 1px solid #d2b48c; margin: 8px 0;">
-                            <p style="font-size: 12px; color: #000; margin: 3px 0;"><b>HOLDER:</b> {visit['Name']}</p>
+                            <hr style="border-top: 1px solid #d2b48c; margin: 10px 0;">
+                            <p style="font-size: 13px; color: #000; margin: 5px 0;"><b>HOLDER:</b> {visit['Name']}</p>
                             <p style="font-size: 11px; color: #000; margin: 0;"><b>DATE:</b> {visit['Date']}</p>
                         </div>
-                        <div style="position: absolute; bottom: 10px; right: 10px; width: 80px; height: 80px; border: 4px double rgba(139, 0, 0, 0.7); border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; transform: rotate(-15deg); background: rgba(255, 255, 255, 0.1);">
-                            <div style="border: 1px solid rgba(139, 0, 0, 0.4); border-radius: 50%; width: 65px; height: 65px; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.1;">
-                                <span style="font-size: 5px; color: rgba(139, 0, 0, 0.7); font-weight: bold; margin-bottom: 2px;">★ ★ ★</span>
-                                <span style="font-size: 9px; color: rgba(139, 0, 0, 0.8); font-weight: 900; text-align: center;">MAISON<br>BALKISS</span>
-                                <span style="font-size: 5px; color: rgba(139, 0, 0, 0.7); font-weight: bold; margin-top: 2px;">OFFICIAL</span>
+                        <div style="position: absolute; bottom: 10px; right: 10px; width: 85px; height: 85px; border: 4px double rgba(139, 0, 0, 0.7); border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; transform: rotate(-15deg); background: rgba(255, 255, 255, 0.1);">
+                            <div style="border: 1px solid rgba(139, 0, 0, 0.4); border-radius: 50%; width: 70px; height: 70px; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.1;">
+                                <span style="font-size: 6px; color: rgba(139, 0, 0, 0.7); font-weight: bold; margin-bottom: 2px;">★ ★ ★</span>
+                                <span style="font-size: 10px; color: rgba(139, 0, 0, 0.8); font-weight: 900; text-align: center;">MAISON<br>BALKISS</span>
+                                <span style="font-size: 6px; color: rgba(139, 0, 0, 0.7); font-weight: bold; margin-top: 2px;">OFFICIAL</span>
                             </div>
                         </div>
                     </div>
