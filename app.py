@@ -91,10 +91,12 @@ else:
 
     tab1, tab2, tab3 = st.tabs([t['tab1'], t['tab2'], t['tab3']])
 
-    with tab1:
+   with tab1:
         st.header(t['tab1'])
         api_key = "AIzaSyBN9cmExKPo5Mn9UAtvdYKohgODPf8hwbA"
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
+        
+        # التعديل: استعملنا gemini-pro (Text Only) المستقر جداً
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={api_key}"
 
         user_query = st.chat_input("Ask Maison Balkiss AI...")
         if user_query:
@@ -115,15 +117,15 @@ else:
                         answer = res_json['candidates'][0]['content']['parts'][0]['text']
                         st.session_state.chat_history.append({"u": user_query, "a": answer})
                     else:
-                        st.error(f"AI Error: {res_json.get('error', {}).get('message', 'Unknown error')}")
+                        # إيلا باقي شي مشكل، غايعطينا التفاصيل هنا
+                        st.error(f"AI Error: {res_json.get('error', {}).get('message', 'Service not ready')}")
             except Exception as e:
                 st.error(f"Connection Error: {str(e)}")
 
         for chat in reversed(st.session_state.chat_history):
             st.markdown(f"**👤 You:** {chat['u']}")
-            st.markdown(f"**🏛️ AI:** {chat['a']}")
+            st.markdown(f"**🏛️ Maison Balkiss:** {chat['a']}")
             st.markdown("---")
-
     with tab2:
         st.header(t['tab2'])
         st.write("Smart Discovery for Sefrou, Figuig, and Tangier is coming next!")
