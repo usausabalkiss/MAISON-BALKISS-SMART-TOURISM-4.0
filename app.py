@@ -87,9 +87,49 @@ else:
 
     with tab1:
         st.header(t['tab1'])
-        st.info("AI Chatbot is being initialized... Ready for your questions!")
-        # هنا غادي نربطو Gemini Text فقط (بدون صور)
+        
+        # إعداد المفتاح (Gemini API Key)
+        # ملاحظة: استعملنا النسخة النصية فقط لتفادي أخطاء الرؤية
+        api_key = "AIzaSyBN9cmExKPo5Mn9UAtvdYKohgODPf8hwbA"
+        url = f"https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key={api_key}"
 
+        # واجهة الدردشة (Chat Interface)
+        if "chat_history" not in st.session_state:
+            st.session_state.chat_history = []
+
+        user_query = st.chat_input("Ask Maison Balkiss AI anything about your trip...")
+        
+        if user_query:
+            # صياغة الأوامر للذكاء الاصطناعي (Prompt Engineering)
+            prompt = f"""
+            You are a professional Moroccan Virtual Tour Guide for 'Maison Balkiss'. 
+            Your goal is to promote Moroccan tourism, especially in Sefrou, Figuig, and Tangier.
+            Answer the following question professionally in {lang}: {user_query}
+            Be warm, cultural, and helpful. Mention historical facts and local tips.
+            """
+            
+            payload = {"contents": [{"parts": [{"text": prompt}]}]}
+            
+            with st.spinner('Thinking... 🧠'):
+                try:
+                    import requests
+                    response = requests.post(url, json=payload, timeout=15)
+                    res_json = response.json()
+                    
+                    if 'candidates' in res_json:
+                        answer = res_json['candidates'][0]['content']['parts'][0]['text']
+                        # تسجيل الحوار
+                        st.session_state.chat_history.append({"user": user_query, "ai": answer})
+                    else:
+                        st.error("AI is resting. Please try again.")
+                except:
+                    st.warning("Connection issue. AI guide is offline briefly.")
+
+        # عرض تاريخ الدردشة بشكل أنيق
+        for chat in reversed(st.session_state.chat_history):
+            st.markdown(f"**👤 You:** {chat['user']}")
+            st.markdown(f"**🏛️ Maison Balkiss:** {chat['ai']}")
+            st.markdown("---")
     with tab2:
         st.header(t['tab2'])
         col1, col2 = st.columns(2)
