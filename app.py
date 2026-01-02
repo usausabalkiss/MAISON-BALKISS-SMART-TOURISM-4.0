@@ -1,22 +1,24 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
+import requests
 
 # 1. إعدادات الصفحة والهوية البصرية
 st.set_page_config(page_title="MAISON BALKISS SMART TOURISM 4.0", layout="wide")
 
-# تصميم CSS للأسود والذهبي
+# تصميم CSS المصحح (الأسود والذهبي)
 st.markdown("""
     <style>
-    .main { background-color: #000000; color: #D4AF37; }
-    .stButton>button { background-color: #D4AF37; color: black; border-radius: 20px; border: none; font-weight: bold; }
-    h1, h2, h3 { color: #D4AF37 !important; border-bottom: 1px solid #D4AF37; }
+    .main { background-color: #000000 !important; color: #D4AF37 !important; }
+    .stApp { background-color: #000000; }
+    .stButton>button { background-color: #D4AF37; color: black; border-radius: 20px; font-weight: bold; }
+    h1, h2, h3, p, span, label { color: #D4AF37 !important; }
     .stTextInput>div>div>input { background-color: #1a1a1a; color: #D4AF37; border: 1px solid #D4AF37; }
     [data-testid="stSidebar"] { background-color: #111111; border-right: 1px solid #D4AF37; }
     </style>
-    """, unsafe_index=True)
+    """, unsafe_allow_html=True)
 
-# 2. قاموس اللغات الاحترافي
+# 2. قاموس اللغات
 lang_dict = {
     'English': {
         'welcome': 'Welcome to Maison Balkiss',
@@ -44,23 +46,27 @@ lang_dict = {
     }
 }
 
-# 3. إدارة الجلسة (Session State)
+# 3. إدارة الجلسة
 if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
+if 'chat_history' not in st.session_state:
+    st.session_state.chat_history = []
 
-# 4. القائمة الجانبية (Sidebar)
+# 4. القائمة الجانبية
 with st.sidebar:
     st.title("MAISON BALKISS")
     lang = st.selectbox("🌐 Language", ['English', 'العربية'])
     t = lang_dict[lang]
-    
     st.markdown("---")
-    # Admin Login (Hidden Area)
     with st.expander("🔐 Admin Area"):
         admin_pass = st.text_input("Password", type="password")
         if admin_pass == "BALKISS2024":
             st.success("Admin Verified")
-            # هنا غادين نحطو رابط تحميل الملف فالمرحلة الجاية
+            try:
+                df_log = pd.read_csv('visitors_log.csv', names=['Date', 'Name', 'Contact', 'Lang'])
+                st.dataframe(df_log)
+            except:
+                st.write("No logs yet.")
 
 # 5. واجهة الدخول (Leads)
 if not st.session_state.logged_in:
@@ -69,10 +75,10 @@ if not st.session_state.logged_in:
     v_contact = st.text_input(t['email'])
     if st.button(t['start']):
         if v_name and v_contact:
-            # تسجيل البيانات فملف مخفي
-            new_data = pd.DataFrame([[datetime.now(), v_name, v_contact, lang]], 
-                                    columns=['Date', 'Name', 'Contact', 'Language'])
-            new_data.to_csv('visitors_log.csv', mode='a', header=False, index=False)
+            # تسجيل البيانات
+            new_entry = f"{datetime.now()},{v_name},{v_contact},{lang}\n"
+            with open('visitors_log.csv', 'a') as f:
+                f.write(new_entry)
             st.session_state.logged_in = True
             st.rerun()
         else:
@@ -87,67 +93,35 @@ else:
 
     with tab1:
         st.header(t['tab1'])
-        
-        # إعداد المفتاح (Gemini API Key)
-        # ملاحظة: استعملنا النسخة النصية فقط لتفادي أخطاء الرؤية
         api_key = "AIzaSyBN9cmExKPo5Mn9UAtvdYKohgODPf8hwbA"
         url = f"https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key={api_key}"
 
-        # واجهة الدردشة (Chat Interface)
-        if "chat_history" not in st.session_state:
-            st.session_state.chat_history = []
-
-        user_query = st.chat_input("Ask Maison Balkiss AI anything about your trip...")
-        
+        user_query = st.chat_input("Ask Maison Balkiss AI...")
         if user_query:
-            # صياغة الأوامر للذكاء الاصطناعي (Prompt Engineering)
-            prompt = f"""
-            You are a professional Moroccan Virtual Tour Guide for 'Maison Balkiss'. 
-            Your goal is to promote Moroccan tourism, especially in Sefrou, Figuig, and Tangier.
-            Answer the following question professionally in {lang}: {user_query}
-            Be warm, cultural, and helpful. Mention historical facts and local tips.
-            """
-            
+            prompt = f"You are a professional Moroccan Virtual Guide for Maison Balkiss. Promote tourism in Sefrou, Figuig, Tangier. Answer in {lang}: {user_query}"
             payload = {"contents": [{"parts": [{"text": prompt}]}]}
-            
-            with st.spinner('Thinking... 🧠'):
-                try:
-                    import requests
-                    response = requests.post(url, json=payload, timeout=15)
-                    res_json = response.json()
-                    
-                    if 'candidates' in res_json:
-                        answer = res_json['candidates'][0]['content']['parts'][0]['text']
-                        # تسجيل الحوار
-                        st.session_state.chat_history.append({"user": user_query, "ai": answer})
-                    else:
-                        st.error("AI is resting. Please try again.")
-                except:
-                    st.warning("Connection issue. AI guide is offline briefly.")
+            try:
+                response = requests.post(url, json=payload, timeout=15)
+                answer = response.json()['candidates'][0]['content']['parts'][0]['text']
+                st.session_state.chat_history.append({"u": user_query, "a": answer})
+            except:
+                st.error("AI is briefly offline.")
 
-        # عرض تاريخ الدردشة بشكل أنيق
         for chat in reversed(st.session_state.chat_history):
-            st.markdown(f"**👤 You:** {chat['user']}")
-            st.markdown(f"**🏛️ Maison Balkiss:** {chat['ai']}")
+            st.markdown(f"**👤 You:** {chat['u']}")
+            st.markdown(f"**🏛️ AI:** {chat['a']}")
             st.markdown("---")
+
     with tab2:
         st.header(t['tab2'])
-        col1, col2 = st.columns(2)
-        with col1:
-            st.selectbox("Select City", ["Sefrou", "Figuig", "Tangier"])
-        with col2:
-            st.button("📍 Use Current Location")
-        st.write("Smart maps and trails will appear here.")
+        st.write("Smart Discovery for Sefrou, Figuig, and Tangier is coming next!")
 
     with tab3:
         st.header(t['tab3'])
-        st.write("Explore local cooperatives and collect your heritage stamps!")
+        st.write("Collect your Heritage Passport stamps here.")
 
-    # خانة الرأي (Feedback)
     st.markdown("---")
     st.subheader(t['feedback'])
-    st.text_area("Share your experience...")
-    st.button("Submit Feedback")
-
-    # Footer الماركة
-    st.markdown(f"<center>© 2024 MAISON BALKISS - Smart Tourism 4.0 Ecosystem</center>", unsafe_allow_html=True)
+    st.text_area("Your Feedback...")
+    st.button("Submit")
+    st.markdown("<center>© 2024 MAISON BALKISS - Smart Tourism 4.0</center>", unsafe_allow_html=True)
