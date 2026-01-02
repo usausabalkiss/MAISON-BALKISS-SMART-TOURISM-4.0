@@ -192,13 +192,16 @@ else:
                 st.info(t['tips'])
                 st.markdown("🍽️ **Local Flavors:** Don't miss the *Sefroui Harira*.")
 
-    with tab3:
+   with tab3:
         st.header(f"📜 {t['tab3']}")
         user_stamps = load_user_stamps(st.session_state.visitor_email)
         stamps_count = len(user_stamps)
+
+        # 1. باسبور أمباسادور هماوي
         st.markdown(f"""
             <div style="border: 3px double #D4AF37; padding: 25px; border-radius: 15px; background: linear-gradient(145deg, #111, #000); text-align: center;">
                 <h2 style="color: #D4AF37; margin-bottom: 5px;">HERITAGE AMBASSADOR PASSPORT</h2>
+                <p style="color: #D4AF37; font-style: italic;">جواز سفر سفير التراث</p>
                 <hr style="border-color: #D4AF37;">
                 <div style="display: flex; justify-content: space-around; margin-top: 20px;">
                     <div><p style="color: #D4AF37; font-size: 12px;">HOLDER</p><h3 style="color: white;">{st.session_state.visitor_name}</h3></div>
@@ -206,23 +209,33 @@ else:
                 </div>
             </div>
         """, unsafe_allow_html=True)
-        st.progress(min(stamps_count / 10, 1.0))
-        
-        loc_to_scan = st.selectbox("Current Location:", ["Dar El Ghezl", "Bab El Maqam", "The Mellah", "Oued Aggai Falls"])
-        qr_verify = st.text_input("Verification Code", placeholder="1234", key="qr_input")
-        if st.button("🌟 Verify & Stamp"):
-            if qr_verify == "1234":
-                save_stamp_to_db(st.session_state.visitor_name, st.session_state.visitor_email, loc_to_scan)
-                st.success("Stamp added!")
-                st.rerun()
 
+        st.progress(min(stamps_count / 10, 1.0))
+
+        # 2. التحقق الذكي
+        st.subheader("📸 Collect New Stamp")
+        c_scan1, c_scan2 = st.columns([2, 1])
+        with c_scan1:
+            loc_to_scan = st.selectbox("Current Location:", ["Dar El Ghezl", "Bab El Maqam", "The Mellah", "Oued Aggai Falls"])
+        with c_scan2:
+            qr_verify = st.text_input("Verification Code", placeholder="Code from QR")
+        
+        if st.button("🌟 Verify & Stamp"):
+            if qr_verify == "1234": 
+                save_stamp_to_db(st.session_state.visitor_name, st.session_state.visitor_email, loc_to_scan)
+                st.success(f"Verified! Stamp added for {loc_to_scan}")
+                st.rerun()
+            else:
+                st.error("Invalid Code! Please scan the actual QR at the location.")
+
+        # 3. عرض الطوابع البريدية
         st.markdown("---")
         st.subheader("🏺 Your Digital Heritage Stamps")
         cols = st.columns(2)
         for i, visit in enumerate(reversed(user_stamps)):
             with cols[i % 2]:
                 st.markdown(f'''
-                    <div style="background-color: #fdf5e6; padding: 15px; border: 3px dashed #b8860b; border-radius: 2px; margin-bottom: 20px; position: relative; color: black; box-shadow: 5px 5px 15px rgba(0,0,0,0.3); font-family: 'Courier New', Courier, monospace; min-height: 180px;">
+                    <div style="background-color: #fdf5e6; padding: 15px; border: 3px dashed #b8860b; border-radius: 2px; margin-bottom: 20px; position: relative; box-shadow: 5px 5px 15px rgba(0,0,0,0.3); font-family: 'Courier New', Courier, monospace; min-height: 180px;">
                         <div style="border: 1px solid #d2b48c; padding: 10px;">
                             <span style="float: right; color: #b8860b; font-weight: bold; font-size: 18px;">10<br><small>DH</small></span>
                             <h3 style="margin:0; color: #333; text-transform: uppercase;">{visit['Place']}</h3>
@@ -241,11 +254,23 @@ else:
                     </div>
                 ''', unsafe_allow_html=True)
 
+        # 4. بون الخصم الذهبي (مصلح للتحميل PDF)
+        if stamps_count >= 10:
+            st.markdown(f"""
+                <div style="background: linear-gradient(45deg, #D4AF37, #000); padding: 25px; border-radius: 15px; text-align: center; border: 2px solid #D4AF37; margin-top: 30px;">
+                    <h1 style="color: #D4AF37; margin:0;">AMBASSADOR VOUCHER</h1>
+                    <p style="color: white; font-size: 18px;">10% DISCOUNT ON YOUR NEXT VISIT</p>
+                    <div style="background: white; padding: 10px; width: 110px; margin: 15px auto; border-radius: 5px;">
+                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=90x90&data=BALKISS-VOUCHER-{st.session_state.visitor_name}" width="90">
+                    </div>
+                    <p style="color: #D4AF37; font-size: 12px;">Issued for: {st.session_state.visitor_name} | {datetime.now().strftime("%Y-%m-%d")}</p>
+                    
+                    <button onclick="window.print()" style="background-color: #D4AF37; color: black; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; cursor: pointer;">📥 DOWNLOAD VOUCHER (PDF)</button>
+                </div>
+            """, unsafe_allow_html=True)
+
     st.markdown("---")
     st.subheader(t['feedback'])
-    user_msg = st.text_area("Share your experience...", key="f_area")
-    if st.button("Submit Feedback"):
-        if save_feedback(st.session_state.visitor_name, st.session_state.visitor_email, user_msg):
-            st.success("Feedback saved!")
-
+    st.text_area("Your Feedback...")
+    st.button("Submit Feedback")
     st.markdown("<center>© 2026 MAISON BALKISS - Smart Tourism 4.0</center>", unsafe_allow_html=True)
