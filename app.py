@@ -2,6 +2,8 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 import requests
+import folium # مكتبة الخرائط الاحترافية
+from streamlit_folium import st_folium # لربط الخريطة بـ Streamlit
 
 # 1. إعدادات الصفحة والهوية البصرية
 st.set_page_config(page_title="MAISON BALKISS SMART TOURISM 4.0", layout="wide")
@@ -143,29 +145,47 @@ else:
             selected_city = st.selectbox(t['select_city'], ["", "Sefrou (صفرو)", "Figuig (فكيك)", "Tangier (طنجة)"])
         with col2:
             if st.button(t['locate_me']):
-                selected_city = "Sefrou (صفرو)" # مثال للمحاكاة
+                selected_city = "Sefrou (صفرو)" 
                 st.info("Location detected: Sefrou")
 
         search_q = st.text_input(t['search_place'])
 
+        # إعداد الخريطة بناءً على اختيار السائح
+        city_coords = {
+            "Sefrou (صفرو)": [33.8247, -4.8278],
+            "Figuig (فكيك)": [32.1083, -1.2283],
+            "Tangier (طنجة)": [35.7595, -5.8340]
+        }
+
         if selected_city or search_q:
             st.subheader(f"🗺️ {t['route_plan']}")
             
-            # محاكاة عرض المسار الذكي
+            # عرض الخريطة التفاعلية
+            center = city_coords.get(selected_city, [31.7917, -7.0926])
+            m = folium.Map(location=center, zoom_start=13)
+            
+            # إضافة نقط ذهبية للمسار
             if "Sefrou" in selected_city or "صفرو" in search_q:
+                folium.Marker([33.8247, -4.8278], popup="Waterfall Oued Aggai", icon=folium.Icon(color='gold')).add_to(m)
+                folium.Marker([33.8210, -4.8250], popup="Historical Mellah", icon=folium.Icon(color='gold')).add_to(m)
+                st_folium(m, width=900, height=450)
+                
+                st.markdown(f"### 📍 {t['route_plan']}")
                 st.markdown("""
                 * **Stop 1:** Waterfall Oued Aggai (Natural Heritage)
                 * **Stop 2:** Historical Mellah (Cultural Heritage)
                 * **Stop 3:** Cherry Cooperative (Local Craft & Economy)
                 """)
-                st.image("https://images.unsplash.com/photo-1590059392253-90d65b74102c?auto=format&fit=crop&q=80&w=800", caption="Smart Map: Sefrou Route")
             elif "Figuig" in selected_city:
+                folium.Marker([32.1083, -1.2283], popup="Ksar Zenaga", icon=folium.Icon(color='gold')).add_to(m)
+                st_folium(m, width=900, height=450)
                 st.markdown("""
                 * **Stop 1:** Ksar Zenaga (Traditional Architecture)
                 * **Stop 2:** Date Palm Oasis (Agriculture Heritage)
                 * **Stop 3:** Traditional Irrigation System (Intelligence Heritage)
                 """)
             else:
+                st_folium(m, width=900, height=450)
                 st.info("Displaying general smart tourism points near your location.")
 
     with tab3:
