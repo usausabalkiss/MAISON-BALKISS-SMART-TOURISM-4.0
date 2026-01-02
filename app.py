@@ -4,6 +4,7 @@ from datetime import datetime
 import requests
 import folium # مكتبة الخرائط الاحترافية
 from streamlit_folium import st_folium # لربط الخريطة بـ Streamlit
+from geopy.geocoders import Nominatim # الخدمة اللي غتخلي البحث يخدم لأي مدينة
 
 # 1. إعدادات الصفحة والهوية البصرية
 st.set_page_config(page_title="MAISON BALKISS SMART TOURISM 4.0", layout="wide")
@@ -35,7 +36,7 @@ lang_dict = {
         'feedback': 'Your Opinion Matters',
         'select_city': 'Select City',
         'locate_me': '📍 Locate Me',
-        'search_place': 'Search for a specific place...',
+        'search_place': 'Search for a specific place (e.g. Agadir)...',
         'route_plan': 'Your Smart Tourism Route'
     },
     'العربية': {
@@ -51,7 +52,7 @@ lang_dict = {
         'feedback': 'رأيكم يهمنا',
         'select_city': 'اختر المدينة',
         'locate_me': '📍 تحديد مكاني',
-        'search_place': 'ابحث عن مكان محدد...',
+        'search_place': 'ابحث عن مكان محدد (مثلاً: أكادير)...',
         'route_plan': 'مسارك السياحي الذكي'
     }
 }
@@ -150,43 +151,52 @@ else:
 
         search_q = st.text_input(t['search_place'])
 
-        # إعداد الخريطة بناءً على اختيار السائح
+        # --- تفعيل محرك البحث الجغرافي ---
+        target_coords = [33.8247, -4.8278] # الإحداثيات الافتراضية
         city_coords = {
             "Sefrou (صفرو)": [33.8247, -4.8278],
             "Figuig (فكيك)": [32.1083, -1.2283],
             "Tangier (طنجة)": [35.7595, -5.8340]
         }
 
+        if search_q:
+            try:
+                geolocator = Nominatim(user_agent="balkiss_app")
+                location = geolocator.geocode(search_q)
+                if location:
+                    target_coords = [location.latitude, location.longitude]
+                    st.success(f"📍 {location.address}")
+                else:
+                    st.warning("Location not found, showing default.")
+            except:
+                st.error("Search service temporarily unavailable.")
+        elif selected_city:
+            target_coords = city_coords.get(selected_city, target_coords)
+
+        # عرض الخريطة التفاعلية بناءً على البحث أو الاختيار
+        m = folium.Map(location=target_coords, zoom_start=13)
+        folium.Marker(target_coords, popup="Current Search", icon=folium.Icon(color='gold')).add_to(m)
+
         if selected_city or search_q:
             st.subheader(f"🗺️ {t['route_plan']}")
             
-            # عرض الخريطة التفاعلية
-            center = city_coords.get(selected_city, [31.7917, -7.0926])
-            m = folium.Map(location=center, zoom_start=13)
+            # عرض الخريطة
+            st_folium(m, width=900, height=450)
             
-            # إضافة نقط ذهبية للمسار
-            if "Sefrou" in selected_city or "صفرو" in search_q:
-                folium.Marker([33.8247, -4.8278], popup="Waterfall Oued Aggai", icon=folium.Icon(color='gold')).add_to(m)
-                folium.Marker([33.8210, -4.8250], popup="Historical Mellah", icon=folium.Icon(color='gold')).add_to(m)
-                st_folium(m, width=900, height=450)
-                
+            # تفاصيل المسارات للمدن الـ 3 الرئيسية
+            if "Sefrou" in (selected_city or search_q) or "صفرو" in (selected_city or search_q):
                 st.markdown(f"### 📍 {t['route_plan']}")
                 st.markdown("""
                 * **Stop 1:** Waterfall Oued Aggai (Natural Heritage)
                 * **Stop 2:** Historical Mellah (Cultural Heritage)
                 * **Stop 3:** Cherry Cooperative (Local Craft & Economy)
                 """)
-            elif "Figuig" in selected_city:
-                folium.Marker([32.1083, -1.2283], popup="Ksar Zenaga", icon=folium.Icon(color='gold')).add_to(m)
-                st_folium(m, width=900, height=450)
+            elif "Figuig" in (selected_city or search_q) or "فكيك" in (selected_city or search_q):
                 st.markdown("""
                 * **Stop 1:** Ksar Zenaga (Traditional Architecture)
                 * **Stop 2:** Date Palm Oasis (Agriculture Heritage)
                 * **Stop 3:** Traditional Irrigation System (Intelligence Heritage)
                 """)
-            else:
-                st_folium(m, width=900, height=450)
-                st.info("Displaying general smart tourism points near your location.")
 
     with tab3:
         st.header(t['tab3'])
