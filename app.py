@@ -94,7 +94,7 @@ else:
         st.header(t['tab1'])
         api_key = "AIzaSyBN9cmExKPo5Mn9UAtvdYKohgODPf8hwbA"
         
-        # التعديل النهائي لعام 2026: استخدام الرابط الرسمي المستقر v1 مع Flash
+        # التعديل: استخدام رابط v1 مع gemini-1.5-flash لضمان التوافق التام
         url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
 
         user_query = st.chat_input("Ask Maison Balkiss AI...")
@@ -116,7 +116,9 @@ else:
                         answer = res_json['candidates'][0]['content']['parts'][0]['text']
                         st.session_state.chat_history.append({"u": user_query, "a": answer})
                     else:
-                        st.error(f"AI Status: {res_json.get('error', {}).get('message', 'Service Update')}")
+                        # عرض رسالة الخطأ الحقيقية من جوجل للتشخيص
+                        error_msg = res_json.get('error', {}).get('message', 'Check API Status')
+                        st.error(f"AI Status: {error_msg}")
             except Exception as e:
                 st.error(f"Connection Error: {str(e)}")
 
