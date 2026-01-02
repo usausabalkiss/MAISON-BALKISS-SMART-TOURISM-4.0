@@ -1,55 +1,113 @@
-
 import streamlit as st
-import sqlite3
 import pandas as pd
+from datetime import datetime
 
-# قاعدة البيانات
-conn = sqlite3.connect('maison_balkiss_pro.db', check_same_thread=False)
-c = conn.cursor()
-c.execute('''CREATE TABLE IF NOT EXISTS ai_projects 
-             (id INTEGER PRIMARY KEY, client TEXT, service TEXT, deadline TEXT, 
-              total REAL, advance REAL, status TEXT)''')
-conn.commit()
+# 1. إعدادات الصفحة والهوية البصرية
+st.set_page_config(page_title="MAISON BALKISS SMART TOURISM 4.0", layout="wide")
 
-st.set_page_config(page_title="Maison Balkiss AI Business", layout="wide")
+# تصميم CSS للأسود والذهبي
+st.markdown("""
+    <style>
+    .main { background-color: #000000; color: #D4AF37; }
+    .stButton>button { background-color: #D4AF37; color: black; border-radius: 20px; border: none; font-weight: bold; }
+    h1, h2, h3 { color: #D4AF37 !important; border-bottom: 1px solid #D4AF37; }
+    .stTextInput>div>div>input { background-color: #1a1a1a; color: #D4AF37; border: 1px solid #D4AF37; }
+    [data-testid="stSidebar"] { background-color: #111111; border-right: 1px solid #D4AF37; }
+    </style>
+    """, unsafe_index=True)
 
-tech_services = ["AI & INNOVATION", "BRANDING & AI", "SMART TOURISM 4.0", "TECH ACADEMY 4.0", "ATELIERS", "Consulting"]
+# 2. قاموس اللغات الاحترافي
+lang_dict = {
+    'English': {
+        'welcome': 'Welcome to Maison Balkiss',
+        'subtitle': 'SMART TOURISM 4.0',
+        'login_title': 'Visitor Registration',
+        'name': 'Full Name',
+        'email': 'Email / Phone',
+        'start': 'Start Discovery',
+        'tab1': '💬 AI Chatbot',
+        'tab2': '🗺️ Smart Trail',
+        'tab3': '📜 Heritage Passport',
+        'feedback': 'Your Opinion Matters'
+    },
+    'العربية': {
+        'welcome': 'مرحباً بكم في ميزون بلقيس',
+        'subtitle': 'السياحة الذكية 4.0',
+        'login_title': 'تسجيل الزوار',
+        'name': 'الاسم الكامل',
+        'email': 'البريد الإلكتروني / الهاتف',
+        'start': 'ابدأ الاكتشاف',
+        'tab1': '💬 شاتبوت ذكي',
+        'tab2': '🗺️ المسار الذكي',
+        'tab3': '📜 الجواز التراثي',
+        'feedback': 'رأيكم يهمنا'
+    }
+}
 
-st.sidebar.title("👑 Maison Balkiss AI")
-admin_mode = st.sidebar.checkbox("🔒 Admin Dashboard")
+# 3. إدارة الجلسة (Session State)
+if 'logged_in' not in st.session_state:
+    st.session_state.logged_in = False
 
-st.title("⚜️ AI Business Management System")
-tab1, tab2, tab3 = st.tabs(["🚀 New Project", "📅 Project Pipeline", "📊 Finance & Admin"])
+# 4. القائمة الجانبية (Sidebar)
+with st.sidebar:
+    st.title("MAISON BALKISS")
+    lang = st.selectbox("🌐 Language", ['English', 'العربية'])
+    t = lang_dict[lang]
+    
+    st.markdown("---")
+    # Admin Login (Hidden Area)
+    with st.expander("🔐 Admin Area"):
+        admin_pass = st.text_input("Password", type="password")
+        if admin_pass == "BALKISS2024":
+            st.success("Admin Verified")
+            # هنا غادين نحطو رابط تحميل الملف فالمرحلة الجاية
 
-with tab1:
-    st.subheader("📩 تسجيل مشروع جديد")
-    with st.form("tech_form", clear_on_submit=True):
-        c1, c2 = st.columns(2)
-        with c1:
-            client = st.text_input("👤 اسم العميل")
-            service = st.selectbox("🛠️ الخدمة", tech_services)
-            total = st.number_input("💰 الميزانية", min_value=0.0)
-        with c2:
-            deadline = st.date_input("📅 التسليم")
-            advance = st.number_input("💵 العربون", min_value=0.0)
-            curr = st.selectbox("💱 العملة", ["USD", "EUR", "MAD"])
-        
-        if st.form_submit_button("✅ حفظ المشروع"):
-            if client:
-                c.execute("INSERT INTO ai_projects (client, service, deadline, total, advance, status) VALUES (?, ?, ?, ?, ?, ?)",
-                          (client, service, deadline.strftime("%Y-%m-%d"), total, advance, "In Progress"))
-                conn.commit()
-                st.success(f"✅ تم تسجيل مشروع {service}!")
+# 5. واجهة الدخول (Leads)
+if not st.session_state.logged_in:
+    st.header(f"🏛️ {t['login_title']}")
+    v_name = st.text_input(t['name'])
+    v_contact = st.text_input(t['email'])
+    if st.button(t['start']):
+        if v_name and v_contact:
+            # تسجيل البيانات فملف مخفي
+            new_data = pd.DataFrame([[datetime.now(), v_name, v_contact, lang]], 
+                                    columns=['Date', 'Name', 'Contact', 'Language'])
+            new_data.to_csv('visitors_log.csv', mode='a', header=False, index=False)
+            st.session_state.logged_in = True
+            st.rerun()
+        else:
+            st.warning("Please fill your details.")
 
-with tab2:
-    st.subheader("📅 Project Pipeline")
-    df = pd.read_sql_query("SELECT client, service, deadline, status FROM ai_projects", conn)
-    st.dataframe(df, use_container_width=True)
+# 6. الواجهة الرئيسية بعد الدخول
+else:
+    st.title(f"👑 {t['welcome']}")
+    st.subheader(t['subtitle'])
 
-with tab3:
-    if admin_mode:
-        pwd = st.text_input("Password", type="password")
-        if pwd == "12345678ouafaa@":
-            full_df = pd.read_sql_query("SELECT * FROM ai_projects", conn)
-            st.dataframe(full_df, use_container_width=True)
-            st.metric("📈 إجمالي الأرباح", f"{full_df['total'].sum()} {curr}")
+    tab1, tab2, tab3 = st.tabs([t['tab1'], t['tab2'], t['tab3']])
+
+    with tab1:
+        st.header(t['tab1'])
+        st.info("AI Chatbot is being initialized... Ready for your questions!")
+        # هنا غادي نربطو Gemini Text فقط (بدون صور)
+
+    with tab2:
+        st.header(t['tab2'])
+        col1, col2 = st.columns(2)
+        with col1:
+            st.selectbox("Select City", ["Sefrou", "Figuig", "Tangier"])
+        with col2:
+            st.button("📍 Use Current Location")
+        st.write("Smart maps and trails will appear here.")
+
+    with tab3:
+        st.header(t['tab3'])
+        st.write("Explore local cooperatives and collect your heritage stamps!")
+
+    # خانة الرأي (Feedback)
+    st.markdown("---")
+    st.subheader(t['feedback'])
+    st.text_area("Share your experience...")
+    st.button("Submit Feedback")
+
+    # Footer الماركة
+    st.markdown(f"<center>© 2024 MAISON BALKISS - Smart Tourism 4.0 Ecosystem</center>", unsafe_allow_html=True)
