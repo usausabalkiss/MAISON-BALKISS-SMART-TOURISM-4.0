@@ -110,10 +110,10 @@ with st.sidebar:
             if os.path.exists('visitors_log.csv'):
                 df_vis = pd.read_csv('visitors_log.csv')
                 st.download_button(
-                label="📥 تحميل قائمة الزوار (CSV)",
-                data=df_vis.to_csv(index=False).encode('utf-8'),
-                file_name='balkiss_visitors.csv',
-                mime='text/csv', )
+                    label="📥 تحميل قائمة الزوار (CSV)",
+                    data=df_vis.to_csv(index=False).encode('utf-8'),
+                    file_name='balkiss_visitors.csv',
+                    mime='text/csv', )
 
 # 5. واجهة الدخول
 if not st.session_state.logged_in:
@@ -256,6 +256,13 @@ else:
                             <hr style="border-top: 1px solid #d2b48c; margin: 10px 0;">
                             <p style="font-size: 13px; color: #000; margin: 5px 0;"><b>HOLDER:</b> {visit['Name']}</p>
                             <p style="font-size: 11px; color: #000; margin: 0;"><b>DATE:</b> {visit['Date']}</p>
+                        </div>
+                        <div style="position: absolute; bottom: 10px; right: 10px; width: 85px; height: 85px; border: 4px double rgba(139, 0, 0, 0.7); border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; transform: rotate(-15deg); background: rgba(255, 255, 255, 0.1);">
+                            <div style="border: 1px solid rgba(139, 0, 0, 0.4); border-radius: 50%; width: 70px; height: 70px; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.1;">
+                                <span style="font-size: 6px; color: rgba(139, 0, 0, 0.7); font-weight: bold; margin-bottom: 2px;">★ ★ ★</span>
+                                <span style="font-size: 10px; color: rgba(139, 0, 0, 0.8); font-weight: 900; text-align: center;">MAISON<br>BALKISS</span>
+                                <span style="font-size: 6px; color: rgba(139, 0, 0, 0.7); font-weight: bold; margin-top: 2px;">OFFICIAL</span>
+                            </div>
                         </div>
                     </div>
                 ''', unsafe_allow_html=True)
