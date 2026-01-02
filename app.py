@@ -164,7 +164,7 @@ else:
         for chat in reversed(st.session_state.chat_history):
             st.markdown(f"**👤 You:** {chat['u']}\n\n**🏛️ Maison Balkiss:** {chat['a']}\n---")
 
-   with tab2:
+    with tab2:
         st.header(t['tab2'])
         
         # التأكد من وجود ملف البيانات
