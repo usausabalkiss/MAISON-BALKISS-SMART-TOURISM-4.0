@@ -156,7 +156,7 @@ else:
     with tab3:
         st.header(f"📜 {t['tab3']}")
         
-        # 1. باسبور أمباسادور هماوي
+        # 1. باسبور أمباسادور هماوي (لم يتم تغييره)
         st.markdown(f"""
             <div style="border: 3px double #D4AF37; padding: 25px; border-radius: 15px; background: linear-gradient(145deg, #111, #000); text-align: center;">
                 <h2 style="color: #D4AF37; margin-bottom: 5px;">HERITAGE AMBASSADOR PASSPORT</h2>
@@ -171,7 +171,7 @@ else:
 
         st.progress(st.session_state.stamps_count / 10)
 
-        # 2. التحقق الذكي (منع الغش)
+        # 2. التحقق الذكي (منع الغش - محاكاة QR)
         st.subheader("📸 Collect New Stamp")
         c_scan1, c_scan2 = st.columns([2, 1])
         with c_scan1:
@@ -180,7 +180,7 @@ else:
             qr_verify = st.text_input("Verification Code", placeholder="Code from QR")
         
         if st.button("🌟 Verify & Stamp"):
-            if qr_verify == "1234": # الكود السري للتحقق
+            if qr_verify == "1234": 
                 now_t = datetime.now().strftime("%Y-%m-%d %H:%M")
                 st.session_state.visited_places.append({"place": loc_to_scan, "date": now_t})
                 st.session_state.stamps_count = min(10, st.session_state.stamps_count + 1)
@@ -189,33 +189,48 @@ else:
             else:
                 st.error("Invalid Code! Please scan the actual QR at the location.")
 
-        # 3. عرض الطوابع البريدية الشخصية
+        # 3. عرض الطوابع البريدية الأثرية بالكاشي الهماوي المطور
         st.markdown("---")
-        st.subheader("🗂️ Your Digital Postage Stamps")
+        st.subheader("🏺 Your Digital Heritage Stamps")
         cols = st.columns(2)
         for i, visit in enumerate(reversed(st.session_state.visited_places)):
             with cols[i % 2]:
                 st.markdown(f"""
-                    <div style="background-color: #fff; padding: 10px; border: 2px dashed #D4AF37; margin-bottom: 10px; color: #000; position: relative;">
-                        <h4 style="margin:0;">{visit['place']}</h4>
-                        <p style="font-size: 11px; color: #666;">OFFICIAL HERITAGE STAMP</p>
-                        <hr style="margin: 5px 0;">
-                        <p style="font-size: 12px; margin:0;"><b>Visitor:</b> {st.session_state.get('visitor_name')}</p>
-                        <p style="font-size: 10px; margin:0;">📅 {visit['date']}</p>
-                        <div style="position: absolute; bottom: 5px; right: 10px; border: 2px solid rgba(212, 175, 55, 0.5); border-radius: 50%; width: 45px; height: 45px; font-size: 8px; font-weight: bold; color: rgba(212, 175, 55, 0.5); text-align: center; display: flex; align-items: center; justify-content: center; transform: rotate(-15deg);">BALKISS<br>SEFROU</div>
+                    <div style="background-color: #fdf5e6; padding: 15px; border: 3px dashed #b8860b; border-radius: 2px; margin-bottom: 20px; position: relative; box-shadow: 5px 5px 15px rgba(0,0,0,0.3); font-family: 'Courier New', Courier, monospace;">
+                        <div style="border: 1px solid #d2b48c; padding: 10px;">
+                            <span style="float: right; color: #b8860b; font-weight: bold; font-size: 18px;">10<br><small>DH</small></span>
+                            <h3 style="margin:0; color: #333; text-transform: uppercase;">{visit['place']}</h3>
+                            <p style="font-size: 11px; color: #8b4513; margin: 5px 0; font-weight: bold;">ROYAUME DU MAROC - HERITAGE</p>
+                            <hr style="border-top: 1px solid #d2b48c; margin: 10px 0;">
+                            <p style="font-size: 13px; color: #000; margin: 5px 0;"><b>HOLDER:</b> {st.session_state.get('visitor_name')}</p>
+                            <p style="font-size: 11px; color: #000; margin: 0;"><b>DATE:</b> {visit['date']}</p>
+                        </div>
+                        
+                        <div style="position: absolute; bottom: 15px; right: 15px; width: 85px; height: 85px; 
+                                    border: 4px double rgba(139, 0, 0, 0.7); border-radius: 50%; 
+                                    display: flex; flex-direction: column; align-items: center; justify-content: center; 
+                                    transform: rotate(-15deg); background: rgba(255, 255, 255, 0.1);">
+                            <div style="border: 1px solid rgba(139, 0, 0, 0.4); border-radius: 50%; width: 70px; height: 70px; 
+                                        display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                                <span style="font-size: 6px; color: rgba(139, 0, 0, 0.7); font-weight: bold;">★ ★ ★</span>
+                                <span style="font-size: 10px; color: rgba(139, 0, 0, 0.8); font-weight: 900; text-align: center;">MAISON<br>BALKISS</span>
+                                <span style="font-size: 6px; color: rgba(139, 0, 0, 0.7); font-weight: bold;">OFFICIAL</span>
+                            </div>
+                        </div>
                     </div>
                 """, unsafe_allow_html=True)
 
-        # 4. بون الخصم الذهبي
+        # 4. بون الخصم الذهبي (Ambassador Voucher)
         if st.session_state.stamps_count >= 10:
             st.markdown(f"""
-                <div style="background: linear-gradient(45deg, #D4AF37, #000); padding: 25px; border-radius: 15px; text-align: center; border: 2px solid #D4AF37;">
-                    <h1 style="color: #D4AF37;">EXCLUSIVE AMBASSADOR VOUCHER</h1>
+                <div style="background: linear-gradient(45deg, #D4AF37, #000); padding: 25px; border-radius: 15px; text-align: center; border: 2px solid #D4AF37; margin-top: 30px;">
+                    <h1 style="color: #D4AF37; margin:0;">AMBASSADOR VOUCHER</h1>
                     <p style="color: white; font-size: 18px;">10% DISCOUNT ON YOUR NEXT VISIT</p>
                     <div style="background: white; padding: 10px; width: 110px; margin: 15px auto; border-radius: 5px;">
-                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=90x90&data=BALKISS-PROMO-{st.session_state.get('visitor_name')}" width="90">
+                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=90x90&data=BALKISS-VOUCHER-{st.session_state.get('visitor_name')}" width="90">
                     </div>
-                    <p style="color: #D4AF37; font-size: 12px;">Valid until: Dec 2026 | Issued: {datetime.now().strftime("%Y-%m-%d")}</p>
+                    <p style="color: #D4AF37; font-size: 12px;">Issued for: {st.session_state.get('visitor_name')} | {datetime.now().strftime("%Y-%m-%d")}</p>
+                    <button style="background-color: #D4AF37; color: black; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold;">DOWNLOAD VOUCHER (PDF)</button>
                 </div>
             """, unsafe_allow_html=True)
 
