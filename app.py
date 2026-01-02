@@ -22,11 +22,6 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # --- وظائف قاعدة البيانات ---
-def load_landmarks_data():
-    if os.path.exists('landmarks_data.csv'):
-        return pd.read_csv('landmarks_data.csv')
-    return pd.DataFrame()
-
 def save_user_to_db(name, email, password):
     df = pd.DataFrame([[datetime.now(), name, email, password]], columns=['Date', 'Name', 'Email', 'Password'])
     df.to_csv('visitors_log.csv', mode='a', header=not os.path.exists('visitors_log.csv'), index=False)
@@ -36,10 +31,10 @@ def check_login(email, password):
         df = pd.read_csv('visitors_log.csv', on_bad_lines='skip')
         user = df[df['Email'] == email]
         if not user.empty:
-            # إصلاح مشكل Invalid للأمانة
-            if 'Password' not in df.columns: return user.iloc[0]['Name']
+            if 'Password' not in df.columns:
+                return user.iloc[0]['Name']
             actual_password = str(user.iloc[0].get('Password', '')).strip()
-            if actual_password in ["nan", "", "None"] or actual_password == str(password):
+            if actual_password == "nan" or actual_password == "" or actual_password == str(password):
                 return user.iloc[0]['Name']
     return None
 
@@ -69,15 +64,23 @@ lang_dict = {
         'welcome': 'Welcome to Maison Balkiss', 'subtitle': 'SMART TOURISM 4.0', 'login_title': 'Visitor Registration',
         'name': 'Full Name', 'email': 'Email / Phone', 'pass': 'Password', 'start': 'Start Discovery', 'tab1': '💬 AI Chatbot',
         'tab2': '🗺️ Smart Trail', 'tab3': '📜 Heritage Passport', 'feedback': 'Your Opinion Matters',
-        'select_region': 'Select Region', 'select_city': 'Select City', 'locate_me': '📍 Locate Me', 
-        'search_place': 'Search for any city...', 'route_plan': 'Your Smart Route'
+        'select_city': 'Select City', 'locate_me': '📍 Locate Me', 'search_place': 'Search for any city or place...',
+        'route_plan': 'Your Smart Tourism Route',
+        'sefrou_title': 'Sefrou: The Garden of Morocco & Cherry Capital',
+        'sefrou_desc': 'Known as "Little Jerusalem", Sefrou is one of the oldest cities in Morocco, famous for its coexistence and the UNESCO Cherry Festival.',
+        'stops': ['🌊 Oued Aggai Falls', '🏘️ Historical Mellah', '🚪 Bab El Maqam', '🕌 Sidi Ali Bousserghine', '🕳️ Kahf El Moumen'],
+        'tips': '💡 Tip: Visit in June for the Cherry Festival!'
     },
     'العربية': {
         'welcome': 'مرحباً بكم في ميزون بلقيس', 'subtitle': 'السياحة الذكية 4.0', 'login_title': 'تسجيل الزوار',
         'name': 'الاسم الكامل', 'email': 'البريد الإلكتروني / الهاتف', 'pass': 'كلمة المرور', 'start': 'ابدأ الاكتشاف', 'tab1': '💬 شاتبوت ذكي',
         'tab2': '🗺️ المسار الذكي', 'tab3': '📜 الجواز التراثي', 'feedback': 'رأيكم يهمنا',
-        'select_region': 'اختر الجهة', 'select_city': 'اختر المدينة', 'locate_me': '📍 تحديد مكاني', 
-        'search_place': 'ابحث عن أي مدينة...', 'route_plan': 'مسارك السياحي الذكي'
+        'select_city': 'اختر المدينة', 'locate_me': '📍 تحديد مكاني', 'search_place': 'ابحث عن أي مدينة أو مكان...',
+        'route_plan': 'مسارك السياحي الذكي',
+        'sefrou_title': 'صفرو: حديقة المغرب وعاصمة حب الملوك',
+        'sefrou_desc': 'تلقب بـ "أورشليم الصغيرة"، وهي من أقدم المدن المغربية، مشهورة بتاريخ التعايش ومهرجان حب الملوك المصنف لدى اليونسكو.',
+        'stops': ['🌊 شلال وادي أكاي', '🏘️ الملاح والمدينة العتيقة', '🚪 باب المقام ومجمع الحرف', '🕌 ضريح سيدي علي بوسرغين', '🕳️ كهف المؤمن'],
+        'tips': '💡 نصيحة: زر المدينة في يونيو لحضور مهرجان حب الملوك!'
     }
 }
 
@@ -95,10 +98,22 @@ with st.sidebar:
     with st.expander("🔐 Admin Area"):
         if st.text_input("Password", type="password", key="admin_key") == "BALKISS2024":
             st.success("Admin Verified")
-            for log_file in ['stamps_log.csv', 'feedback_log.csv', 'visitors_log.csv']:
-                if os.path.exists(log_file):
-                    st.subheader(f"📍 {log_file}")
-                    st.dataframe(pd.read_csv(log_file))
+            if os.path.exists('stamps_log.csv'):
+                st.subheader("📍 Stamps Activity")
+                st.dataframe(pd.read_csv('stamps_log.csv'))
+            if os.path.exists('feedback_log.csv'):
+                st.subheader("💬 Feedback")
+                st.dataframe(pd.read_csv('feedback_log.csv'))
+            if os.path.exists('visitors_log.csv'):
+                st.subheader("👥 Visitors")
+                st.dataframe(pd.read_csv('visitors_log.csv', on_bad_lines='skip'))
+            if os.path.exists('visitors_log.csv'):
+                df_vis = pd.read_csv('visitors_log.csv')
+                st.download_button(
+                label="📥 تحميل قائمة الزوار (CSV)",
+                data=df_vis.to_csv(index=False).encode('utf-8'),
+                file_name='balkiss_visitors.csv',
+                mime='text/csv', )
 
 # 5. واجهة الدخول
 if not st.session_state.logged_in:
@@ -126,68 +141,130 @@ if not st.session_state.logged_in:
 # 6. الواجهة الرئيسية
 else:
     st.title(f"👑 {t['welcome']}")
+    st.subheader(t['subtitle'])
     tab1, tab2, tab3 = st.tabs([t['tab1'], t['tab2'], t['tab3']])
 
     with tab1:
         st.header(t['tab1'])
-        # (AI Code remains exactly as you wrote it)
         api_key = "AIzaSyBN9cmExKPo5Mn9UAtvdYKohgODPf8hwbA"
         url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
         user_query = st.chat_input("Ask Maison Balkiss AI...")
         if user_query:
-            payload = {"contents": [{"parts": [{"text": f"You are a professional Moroccan Virtual Guide. Answer in {lang}: {user_query}"}]}]}
+            payload = {"contents": [{"parts": [{"text": f"You are a professional Moroccan Virtual Guide for Maison Balkiss. Answer in {lang}: {user_query}"}]}]}
             try:
                 response = requests.post(url, json=payload, headers={"Content-Type": "application/json"}, timeout=15)
                 res_json = response.json()
-                answer = res_json['candidates'][0]['content']['parts'][0]['text'] if 'candidates' in res_json else "Repeat please?"
+                if 'candidates' in res_json:
+                    answer = res_json['candidates'][0]['content']['parts'][0]['text']
+                else:
+                    answer = "I'm here to help! Could you please repeat?"
                 st.session_state.chat_history.append({"u": user_query, "a": answer})
-            except: st.error("Offline Mode")
+            except:
+                st.error("Offline Mode")
         for chat in reversed(st.session_state.chat_history):
             st.markdown(f"**👤 You:** {chat['u']}\n\n**🏛️ Maison Balkiss:** {chat['a']}\n---")
 
     with tab2:
         st.header(t['tab2'])
-        df_geo = load_landmarks_data()
-        
-        if not df_geo.empty:
+        col1, col2 = st.columns([2, 1])
+        with col1:
+            selected_city = st.selectbox(t['select_city'], ["", "Sefrou (صفرو)", "Figuig (فكيك)", "Tangier (طنجة)"])
+        with col2:
+            if st.button(t['locate_me']):
+                st.session_state.map_center = [33.8247, -4.8278]
+                st.rerun()
+
+        search_q = st.text_input(t['search_place'])
+        if search_q:
+            try:
+                geolocator = Nominatim(user_agent="balkiss_app_v4")
+                location = geolocator.geocode(search_q)
+                if location: st.session_state.map_center = [location.latitude, location.longitude]
+            except: st.warning("Showing last known location.")
+        elif selected_city:
+            city_coords = {"Sefrou (صفرو)": [33.8247, -4.8278], "Figuig (فكيك)": [32.1083, -1.2283], "Tangier (طنجة)": [35.7595, -5.8340]}
+            st.session_state.map_center = city_coords.get(selected_city, st.session_state.map_center)
+
+        m = folium.Map(location=st.session_state.map_center, zoom_start=14, tiles='OpenStreetMap')
+        is_sefrou = "Sefrou" in (search_q or selected_city) or "صفرو" in (search_q or selected_city)
+        if is_sefrou:
+            folium.Marker([33.8280, -4.8521], popup="Oued Aggai Waterfalls", icon=folium.Icon(color='red', icon='star')).add_to(m)
+            folium.Marker([33.8210, -4.8250], popup="Historical Mellah", icon=folium.Icon(color='red', icon='info-sign')).add_to(m)
+            folium.Marker([33.8300, -4.8320], popup="Bab El Maqam Square", icon=folium.Icon(color='red', icon='camera')).add_to(m)
+            folium.Marker([33.8323, -4.8268], popup="Flame & Fork", icon=folium.Icon(color='green', icon='cutlery')).add_to(m)
+            folium.Marker([33.8315, -4.8260], popup="Restaurant Es-saqia", icon=folium.Icon(color='green', icon='cutlery')).add_to(m)
+            folium.Marker([33.7873, -4.8207], popup="Al Iklil Cooperative", icon=folium.Icon(color='blue', icon='leaf')).add_to(m)
+            folium.Marker([33.8340, -4.8280], popup="Artisan Cooperative Sefrou", icon=folium.Icon(color='blue', icon='wrench')).add_to(m)
+        st_folium(m, width=900, height=450, key="main_map")
+
+        if is_sefrou:
+            st.markdown(f"## 🍒 {t['sefrou_title']}")
+            st.write(t['sefrou_desc'])
             c1, c2 = st.columns(2)
             with c1:
-                sel_reg = st.selectbox(t['select_region'], [""] + sorted(df_geo['Region'].unique().tolist()))
+                st.markdown(f"### 📍 {t['route_plan']}")
+                for stop in t['stops']: st.markdown(f"* {stop}")
             with c2:
-                if sel_reg:
-                    cities = sorted(df_geo[df_geo['Region'] == sel_reg]['City'].unique().tolist())
-                    sel_city = st.selectbox(t['select_city'], [""] + cities)
-                else: sel_city = None
-
-            if sel_city:
-                city_info = df_geo[df_geo['City'] == sel_city].iloc[0]
-                st.session_state.map_center = [city_info['Lat'], city_info['Lon']]
-                st.info(f"✨ **{sel_city}**: {city_info['Description']}")
-                
-                m = folium.Map(location=st.session_state.map_center, zoom_start=12)
-                folium.Marker([city_info['Lat'], city_info['Lon']], popup=city_info['Place']).add_to(m)
-                st_folium(m, width=900, height=450, key="heritage_map")
-        else:
-            st.warning("Please upload landmarks_data.csv to see the map.")
+                st.info(t['tips'])
+                st.markdown("🍽️ **Local Flavors:** Don't miss the *Sefroui Harira*.")
 
     with tab3:
-        # (Passport UI remains exactly as your beautiful design)
         st.header(f"📜 {t['tab3']}")
         user_stamps = load_user_stamps(st.session_state.visitor_email)
         stamps_count = len(user_stamps)
-        
+
         st.markdown(f"""
             <div style="border: 3px double #D4AF37; padding: 25px; border-radius: 15px; background: linear-gradient(145deg, #111, #000); text-align: center;">
-                <h2 style="color: #D4AF37;">HERITAGE AMBASSADOR PASSPORT</h2>
-                <div style="display: flex; justify-content: space-around;">
-                    <div><p style="color: #D4AF37;">HOLDER</p><h3 style="color: white;">{st.session_state.visitor_name}</h3></div>
-                    <div><p style="color: #D4AF37;">STAMPS</p><h3 style="color: white;">{stamps_count} / 10</h3></div>
+                <h2 style="color: #D4AF37; margin-bottom: 5px;">HERITAGE AMBASSADOR PASSPORT</h2>
+                <p style="color: #D4AF37; font-style: italic;">جواز سفر سفير التراث</p>
+                <hr style="border-color: #D4AF37;">
+                <div style="display: flex; justify-content: space-around; margin-top: 20px;">
+                    <div><p style="color: #D4AF37; font-size: 12px;">HOLDER</p><h3 style="color: white;">{st.session_state.visitor_name}</h3></div>
+                    <div><p style="color: #D4AF37; font-size: 12px;">STAMPS</p><h3 style="color: white;">{stamps_count} / 10</h3></div>
                 </div>
             </div>
         """, unsafe_allow_html=True)
-        
-        # (Stamps verification and display logic remains untouched)
+
         st.progress(min(stamps_count / 10, 1.0))
-        # ... Rest of your stamp code follows
+
+        st.subheader("📸 Collect New Stamp")
+        c_scan1, c_scan2 = st.columns([2, 1])
+        with c_scan1:
+            loc_to_scan = st.selectbox("Current Location:", ["Dar El Ghezl", "Bab El Maqam", "The Mellah", "Oued Aggai Falls"])
+        with c_scan2:
+            qr_verify = st.text_input("Verification Code", placeholder="Code from QR", key="qr_input_code")
+        
+        if st.button("🌟 Verify & Stamp"):
+            if qr_verify == "1234":
+                save_stamp_to_db(st.session_state.visitor_name, st.session_state.visitor_email, loc_to_scan)
+                st.success(f"Verified! Stamp added for {loc_to_scan}")
+                st.rerun()
+            else:
+                st.error("Invalid Code!")
+
+        st.markdown("---")
+        st.subheader("🏺 Your Digital Heritage Stamps")
+        cols = st.columns(2)
+        for i, visit in enumerate(reversed(user_stamps)):
+            with cols[i % 2]:
+                st.markdown(f'''
+                    <div style="background-color: #fdf5e6; padding: 15px; border: 3px dashed #b8860b; border-radius: 2px; margin-bottom: 20px; position: relative; box-shadow: 5px 5px 15px rgba(0,0,0,0.3); font-family: 'Courier New', Courier, monospace; min-height: 180px;">
+                        <div style="border: 1px solid #d2b48c; padding: 10px;">
+                            <span style="float: right; color: #b8860b; font-weight: bold; font-size: 18px;">10<br><small>DH</small></span>
+                            <h3 style="margin:0; color: #333; text-transform: uppercase;">{visit['Place']}</h3>
+                            <p style="font-size: 10px; color: #8b4513; margin: 5px 0; font-weight: bold;">ROYAUME DU MAROC - HERITAGE</p>
+                            <hr style="border-top: 1px solid #d2b48c; margin: 10px 0;">
+                            <p style="font-size: 13px; color: #000; margin: 5px 0;"><b>HOLDER:</b> {visit['Name']}</p>
+                            <p style="font-size: 11px; color: #000; margin: 0;"><b>DATE:</b> {visit['Date']}</p>
+                        </div>
+                    </div>
+                ''', unsafe_allow_html=True)
+
+    st.markdown("---")
+    st.subheader(t['feedback'])
+    user_msg = st.text_area("Your Feedback...", key="feedback_area_unique")
+    if st.button("Submit Feedback"):
+        if save_feedback(st.session_state.visitor_name, st.session_state.visitor_email, user_msg):
+            st.success("Success! Feedback recorded.")
 
     st.markdown("<center>© 2026 MAISON BALKISS - Smart Tourism 4.0</center>", unsafe_allow_html=True)
