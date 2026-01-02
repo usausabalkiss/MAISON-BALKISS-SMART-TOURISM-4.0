@@ -2,9 +2,9 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 import requests
-import folium # مكتبة الخرائط الاحترافية
-from streamlit_folium import st_folium # لربط الخريطة بـ Streamlit
-from geopy.geocoders import Nominatim # الخدمة اللي غتخلي البحث يخدم لأي مدينة
+import folium 
+from streamlit_folium import st_folium 
+from geopy.geocoders import Nominatim 
 
 # 1. إعدادات الصفحة والهوية البصرية
 st.set_page_config(page_title="MAISON BALKISS SMART TOURISM 4.0", layout="wide")
@@ -42,7 +42,6 @@ lang_dict = {
 # 3. إدارة الجلسة
 if 'logged_in' not in st.session_state: st.session_state.logged_in = False
 if 'chat_history' not in st.session_state: st.session_state.chat_history = []
-# حفظ موقع الخريطة الحالي
 if 'map_center' not in st.session_state: st.session_state.map_center = [33.8247, -4.8278]
 
 # 4. القائمة الجانبية
@@ -81,11 +80,12 @@ else:
         url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
         user_query = st.chat_input("Ask Maison Balkiss AI...")
         if user_query:
-            prompt = f"You are a professional Moroccan Virtual Guide for Maison Balkiss. Answer in {lang}: {user_query}"
+            prompt = f"You are a professional Moroccan Virtual Guide for Maison Balkiss. Promote tourism in Sefrou, Figuig, Tangier. Answer in {lang}: {user_query}"
             try:
                 response = requests.post(url, json={"contents": [{"parts": [{"text": prompt}]}]}, headers={"Content-Type": "application/json"}, timeout=15)
                 res_json = response.json()
-                answer = res_json['candidates'][0]['content']['parts'][0]['text'] if 'candidates' in res_json else "Welcome to Sefrou!"
+                # رجعنا الرسالة الترحيبية الأصلية هنا
+                answer = res_json['candidates'][0]['content']['parts'][0]['text'] if 'candidates' in res_json else "Welcome! I am your Maison Balkiss guide. I am here to help you discover Morocco's hidden gems."
                 st.session_state.chat_history.append({"u": user_query, "a": answer})
             except: st.error("Offline Mode")
         for chat in reversed(st.session_state.chat_history):
@@ -103,36 +103,36 @@ else:
 
         search_q = st.text_input(t['search_place'])
 
-        # منطق البحث مع حفظ الموقع
         if search_q:
             try:
-                geolocator = Nominatim(user_agent="balkiss_app_v2")
+                geolocator = Nominatim(user_agent="balkiss_app_v3")
                 location = geolocator.geocode(search_q)
                 if location: st.session_state.map_center = [location.latitude, location.longitude]
-            except: st.warning("Search slow, showing last known location.")
+            except: st.warning("Showing last location.")
         elif selected_city:
             city_coords = {"Sefrou (صفرو)": [33.8247, -4.8278], "Figuig (فكيك)": [32.1083, -1.2283], "Tangier (طنجة)": [35.7595, -5.8340]}
             st.session_state.map_center = city_coords.get(selected_city, st.session_state.map_center)
 
-        # إنشاء الخريطة التفاعلية
         m = folium.Map(location=st.session_state.map_center, zoom_start=14)
         
-        # إضافة المعالم الأوتوماتيكية لمدينة صفرو
+        # تعمير الخريطة بنقط حقيقية لصفرو
         if "Sefrou" in (search_q or selected_city) or "صفرو" in (search_q or selected_city):
-            folium.Marker([33.8280, -4.8521], popup="شلالات صفرو (Landmark)", icon=folium.Icon(color='red', icon='star')).add_to(m)
-            folium.Marker([33.8323, -4.8268], popup="Flame & Fork (Restaurant)", icon=folium.Icon(color='green', icon='cutlery')).add_to(m)
+            # معالم أثرية
+            folium.Marker([33.8280, -4.8521], popup="Oued Aggai Waterfalls", icon=folium.Icon(color='red', icon='star')).add_to(m)
+            folium.Marker([33.8210, -4.8250], popup="Historical Mellah", icon=folium.Icon(color='red', icon='info-sign')).add_to(m)
+            folium.Marker([33.8300, -4.8320], popup="Bab El Maqam Square", icon=folium.Icon(color='red', icon='camera')).add_to(m)
+            # مطاعم
+            folium.Marker([33.8323, -4.8268], popup="Flame & Fork", icon=folium.Icon(color='green', icon='cutlery')).add_to(m)
+            folium.Marker([33.8315, -4.8260], popup="Restaurant Es-saqia", icon=folium.Icon(color='green', icon='cutlery')).add_to(m)
+            # تعاونيات
             folium.Marker([33.7873, -4.8207], popup="Al Iklil Cooperative", icon=folium.Icon(color='blue', icon='leaf')).add_to(m)
-            folium.Marker([33.8210, -4.8250], popup="Ancient Mellah", icon=folium.Icon(color='orange', icon='home')).add_to(m)
+            folium.Marker([33.8340, -4.8280], popup="Artisan Cooperative Sefrou", icon=folium.Icon(color='blue', icon='wrench')).add_to(m)
 
         st_folium(m, width=900, height=450, key="main_map")
 
-        if "Sefrou" in (search_q or selected_city) or "صفرو" in (search_q or selected_city):
-            st.markdown(f"### 📍 {t['route_plan']}")
-            st.info("Points shown: Red=Landmarks, Green=Restaurants, Blue=Cooperatives")
-
     with tab3:
         st.header(t['tab3'])
-        st.write("Register your Heritage Passport stamps here.")
+        st.write("Heritage Passport logic.")
 
     st.markdown("---")
     st.subheader(t['feedback'])
