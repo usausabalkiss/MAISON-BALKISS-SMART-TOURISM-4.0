@@ -156,7 +156,7 @@ else:
     with tab3:
         st.header(f"📜 {t['tab3']}")
         
-        # 1. باسبور أمباسادور هماوي (لم يتم تغييره)
+        # 1. باسبور أمباسادور هماوي
         st.markdown(f"""
             <div style="border: 3px double #D4AF37; padding: 25px; border-radius: 15px; background: linear-gradient(145deg, #111, #000); text-align: center;">
                 <h2 style="color: #D4AF37; margin-bottom: 5px;">HERITAGE AMBASSADOR PASSPORT</h2>
@@ -171,7 +171,7 @@ else:
 
         st.progress(st.session_state.stamps_count / 10)
 
-        # 2. التحقق الذكي (منع الغش - محاكاة QR)
+        # 2. التحقق الذكي (منع الغش)
         st.subheader("📸 Collect New Stamp")
         c_scan1, c_scan2 = st.columns([2, 1])
         with c_scan1:
@@ -196,25 +196,25 @@ else:
         for i, visit in enumerate(reversed(st.session_state.visited_places)):
             with cols[i % 2]:
                 st.markdown(f"""
-                    <div style="background-color: #fdf5e6; padding: 15px; border: 3px dashed #b8860b; border-radius: 2px; margin-bottom: 20px; position: relative; box-shadow: 5px 5px 15px rgba(0,0,0,0.3); font-family: 'Courier New', Courier, monospace;">
+                    <div style="background-color: #fdf5e6; padding: 15px; border: 3px dashed #b8860b; border-radius: 2px; margin-bottom: 20px; position: relative; box-shadow: 5px 5px 15px rgba(0,0,0,0.3); font-family: 'Courier New', Courier, monospace; min-height: 180px;">
                         <div style="border: 1px solid #d2b48c; padding: 10px;">
                             <span style="float: right; color: #b8860b; font-weight: bold; font-size: 18px;">10<br><small>DH</small></span>
-                            <h3 style="margin:0; color: #333; text-transform: uppercase;">{visit['place']}</h3>
-                            <p style="font-size: 11px; color: #8b4513; margin: 5px 0; font-weight: bold;">ROYAUME DU MAROC - HERITAGE</p>
-                            <hr style="border-top: 1px solid #d2b48c; margin: 10px 0;">
-                            <p style="font-size: 13px; color: #000; margin: 5px 0;"><b>HOLDER:</b> {st.session_state.get('visitor_name')}</p>
+                            <h3 style="margin:0; color: #333; text-transform: uppercase; font-size: 16px;">{visit['place']}</h3>
+                            <p style="font-size: 10px; color: #8b4513; margin: 5px 0; font-weight: bold;">ROYAUME DU MAROC - HERITAGE</p>
+                            <hr style="border-top: 1px solid #d2b48c; margin: 8px 0;">
+                            <p style="font-size: 12px; color: #000; margin: 3px 0;"><b>HOLDER:</b> {st.session_state.get('visitor_name')}</p>
                             <p style="font-size: 11px; color: #000; margin: 0;"><b>DATE:</b> {visit['date']}</p>
                         </div>
                         
-                        <div style="position: absolute; bottom: 15px; right: 15px; width: 85px; height: 85px; 
+                        <div style="position: absolute; bottom: 10px; right: 10px; width: 80px; height: 80px; 
                                     border: 4px double rgba(139, 0, 0, 0.7); border-radius: 50%; 
                                     display: flex; flex-direction: column; align-items: center; justify-content: center; 
                                     transform: rotate(-15deg); background: rgba(255, 255, 255, 0.1);">
-                            <div style="border: 1px solid rgba(139, 0, 0, 0.4); border-radius: 50%; width: 70px; height: 70px; 
+                            <div style="border: 1px solid rgba(139, 0, 0, 0.4); border-radius: 50%; width: 65px; height: 65px; 
                                         display: flex; flex-direction: column; align-items: center; justify-content: center;">
-                                <span style="font-size: 6px; color: rgba(139, 0, 0, 0.7); font-weight: bold;">★ ★ ★</span>
-                                <span style="font-size: 10px; color: rgba(139, 0, 0, 0.8); font-weight: 900; text-align: center;">MAISON<br>BALKISS</span>
-                                <span style="font-size: 6px; color: rgba(139, 0, 0, 0.7); font-weight: bold;">OFFICIAL</span>
+                                <span style="font-size: 5px; color: rgba(139, 0, 0, 0.7); font-weight: bold;">★ ★ ★</span>
+                                <span style="font-size: 9px; color: rgba(139, 0, 0, 0.8); font-weight: 900; text-align: center; line-height: 1;">MAISON<br>BALKISS</span>
+                                <span style="font-size: 5px; color: rgba(139, 0, 0, 0.7); font-weight: bold;">OFFICIAL</span>
                             </div>
                         </div>
                     </div>
