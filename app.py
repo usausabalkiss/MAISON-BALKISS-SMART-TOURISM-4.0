@@ -277,3 +277,47 @@ st.markdown(f'''
     </div>
 ''', unsafe_allow_html=True)
 st.markdown("<center>© 2026 MAISON BALKISS - Smart Tourism 4.0</center>", unsafe_allow_html=True)
+# --- تزيديه فآخر الملف ---
+st.write("---") 
+st.subheader("🌟 Exclusive Eco-Travel Services")
+
+with st.expander("Get your Personalized Green Itinerary (15€)"):
+    st.write("Plan your perfect eco-friendly trip to Morocco with our experts.")
+    
+    # فورم صغير خاص بالشراء
+    with st.form("purchase_form"):
+        cust_name = st.text_input("Your Full Name")
+        cust_email = st.text_input("Your Email")
+        service = "Green Itinerary - 15€"
+        
+        submit_order = st.form_submit_button("Confirm & Pay via WhatsApp 💬")
+        
+        if submit_order:
+            if cust_name and cust_email:
+                # 1. إرسال البيانات للجدول
+                order_data = pd.DataFrame([{
+                    "Timestamp": pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    "Guest Name": cust_name,
+                    "City": cust_email, # استعملنا خانة المدينة للإيميل مؤقتاً
+                    "Passport Type": "PURCHASE: " + service,
+                    "Notes": "Waiting for payment"
+                }])
+                
+                try:
+                    # قراءة البيانات القديمة وإضافة الجديدة
+                    existing_data = conn.read()
+                    updated_df = pd.concat([existing_data, order_data], ignore_index=True)
+                    conn.update(data=updated_df)
+                    
+                    st.success("Order registered! Redirecting to WhatsApp...")
+                    
+                    # 2. رابط الواتساب مع رسالة جاهزة
+                    wa_url = f"https://wa.me/2126XXXXXXXX?text=Hello%20Maison%20Balkiss!%20My%20name%20is%20{cust_name}.%20I%20just%20ordered%20the%20{service}.%20How%20can%20I%20pay?"
+                    
+                    # فتح الواتساب تلقائياً
+                    st.markdown(f'<meta http-equiv="refresh" content="0;url={wa_url}">', unsafe_allow_html=True)
+                    
+                except Exception as e:
+                    st.error("Connection error. Please contact us directly via WhatsApp.")
+            else:
+                st.warning("Please fill in your name and email.")
