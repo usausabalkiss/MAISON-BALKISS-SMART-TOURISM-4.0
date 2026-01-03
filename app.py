@@ -268,7 +268,7 @@ st.markdown(f'''
         <p style="font-size: 18px; color: #555;">Support Maison Balkiss and get your Personalized Green Itinerary!</p>
         <p style="font-weight: bold; font-size: 20px;">Price: 15€</p>
         <br>
-        <a href="https://wa.me/2126XXXXXXXX?text=Hello%20Maison%20Balkiss,%20I%20want%20to%20order%20my%20Eco-Travel%20Plan" 
+        <a href="https://wa.me/212667920412?text=Hello%20Maison%20Balkiss,%20I%20want%20to%20order%20my%20Eco-Travel%20Plan" 
            target="_blank" 
            style="background-color: #25D366; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block; font-size: 18px;">
            Order Now via WhatsApp 💬
@@ -276,4 +276,4 @@ st.markdown(f'''
         <p style="margin-top: 15px; font-size: 12px; color: #888;">Payments via PayPal or Bank Transfer</p>
     </div>
 ''', unsafe_allow_html=True)
-    st.markdown("<center>© 2026 MAISON BALKISS - Smart Tourism 4.0</center>", unsafe_allow_html=True)
+st.markdown("<center>© 2026 MAISON BALKISS - Smart Tourism 4.0</center>", unsafe_allow_html=True)
