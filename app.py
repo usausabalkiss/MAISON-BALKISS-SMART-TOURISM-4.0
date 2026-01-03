@@ -12,36 +12,21 @@ st.set_page_config(page_title="MAISON BALKISS SMART TOURISM 4.0", layout="wide")
 
 st.markdown("""
     <style>
-    /* 1. الألوان ديالك (أمانتك) */
+    /* قفل الخصوصية: إخفاء الدوارة والقائمة نهائياً */
+    [data-testid="stToolbar"] {visibility: hidden !important; display: none !important;}
+    #MainMenu {visibility: hidden !important;}
+    footer {visibility: hidden !important;}
+    header {visibility: hidden !important;}
+    .stDeployButton {display:none !important;}
     .main { background-color: #000000 !important; color: #D4AF37 !important; }
     .stApp { background-color: #000000; }
     .stButton>button { background-color: #D4AF37; color: black; border-radius: 20px; font-weight: bold; }
     h1, h2, h3, p, span, label { color: #D4AF37 !important; }
     .stTextInput>div>div>input { background-color: #1a1a1a; color: #D4AF37; border: 1px solid #D4AF37; }
     [data-testid="stSidebar"] { background-color: #111111; border-right: 1px solid #D4AF37; }
-
-    /* 2. مسح "Created by" وأي رابط خارجي لتحت */
-    footer {visibility: hidden !important;}
-    footer:after {
-        content:'© 2026 MAISON BALKISS'; 
-        visibility: visible;
-        display: block;
-        position: relative;
-        padding: 5px;
-        top: 2px;
-        color: #D4AF37;
-    }
-
-    /* 3. إخفاء الدوارة والـ Toolbar نهائياً */
-    header {visibility: hidden !important;}
-    [data-testid="stToolbar"] {display: none !important;}
-    #MainMenu {visibility: hidden !important;}
-    .stDeployButton {display:none !important;}
-    
-    /* إخفاء أيقونة المساعدة والروابط الجانبية */
-    [data-testid="stStatusWidget"] {display: none !important;}
     </style>
     """, unsafe_allow_html=True)
+
 # --- وظائف قاعدة البيانات ---
 def save_user_to_db(name, email, password):
     df = pd.DataFrame([[datetime.now(), name, email, password]], columns=['Date', 'Name', 'Email', 'Password'])
