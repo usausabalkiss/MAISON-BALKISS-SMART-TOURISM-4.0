@@ -260,5 +260,20 @@ else:
     if st.button("Submit Feedback"):
         if save_feedback(st.session_state.visitor_name, st.session_state.visitor_email, user_msg):
             st.success("Success! Feedback recorded.")
-
+# --- تزيديه فآخر الملف ---
+st.write("---") # خط فاصل
+st.markdown(f'''
+    <div style="background-color: #ffffff; padding: 25px; border-radius: 15px; border: 2px solid #e0e0e0; text-align: center; box-shadow: 2px 2px 10px rgba(0,0,0,0.1);">
+        <h2 style="color: #2e7d32;">🌟 Exclusive Eco-Travel Services</h2>
+        <p style="font-size: 18px; color: #555;">Support Maison Balkiss and get your Personalized Green Itinerary!</p>
+        <p style="font-weight: bold; font-size: 20px;">Price: 15€</p>
+        <br>
+        <a href="https://wa.me/2126XXXXXXXX?text=Hello%20Maison%20Balkiss,%20I%20want%20to%20order%20my%20Eco-Travel%20Plan" 
+           target="_blank" 
+           style="background-color: #25D366; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block; font-size: 18px;">
+           Order Now via WhatsApp 💬
+        </a>
+        <p style="margin-top: 15px; font-size: 12px; color: #888;">Payments via PayPal or Bank Transfer</p>
+    </div>
+''', unsafe_allow_html=True)
     st.markdown("<center>© 2026 MAISON BALKISS - Smart Tourism 4.0</center>", unsafe_allow_html=True)
