@@ -1,3 +1,4 @@
+from streamlit_gsheets import GSheetsConnection
 import streamlit as st
 import pandas as pd
 import os
@@ -21,41 +22,63 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- وظائف قاعدة البيانات ---
+# --- ربط الاتصال بـ Google Sheets ---
+# ملاحظة: تأكدي أنك زدتي import streamlit_gsheets الفوق كاع
+SHEET_URL = "https://docs.google.com/spreadsheets/d/16zz9Cejgq91C28TFhnODjk-0Crs74jh8RSbUFSkMZrY/edit?usp=sharing"
+conn = st.connection("gsheets", type=GSheetsConnection)
 def save_user_to_db(name, email, password):
-    df = pd.DataFrame([[datetime.now(), name, email, password]], columns=['Date', 'Name', 'Email', 'Password'])
-    df.to_csv('visitors_log.csv', mode='a', header=not os.path.exists('visitors_log.csv'), index=False)
+    try:
+        df = conn.read(spreadsheet=SHEET_URL)
+        new_user = pd.DataFrame([[datetime.now().strftime("%Y-%m-%d %H:%M"), name, email, str(password)]], 
+                                columns=['Date', 'Name', 'Email', 'Password'])
+        updated_df = pd.concat([df, new_user], ignore_index=True)
+        conn.update(spreadsheet=SHEET_URL, data=updated_df)
+    except:
+        st.error("Error saving to Google Sheets")
 
 def check_login(email, password):
-    if os.path.exists('visitors_log.csv'):
-        df = pd.read_csv('visitors_log.csv', on_bad_lines='skip')
-        user = df[df['Email'] == email]
+    try:
+        df = conn.read(spreadsheet=SHEET_URL)
+        # كنأكدو أننا كنقارنو نصوص (strings) باش ما يوقعش غلط
+        user = df[(df['Email'].astype(str) == str(email)) & (df['Password'].astype(str) == str(password))]
         if not user.empty:
-            if 'Password' not in df.columns:
-                return user.iloc[0]['Name']
-            actual_password = str(user.iloc[0].get('Password', '')).strip()
-            if actual_password == "nan" or actual_password == "" or actual_password == str(password):
-                return user.iloc[0]['Name']
+            return user.iloc[0]['Name']
+    except:
+        pass
     return None
 
 def save_stamp_to_db(name, email, place):
-    now = datetime.now().strftime("%Y-%m-%d %H:%M")
-    df = pd.DataFrame([[name, email, place, now]], columns=['Name', 'Email', 'Place', 'Date'])
-    df.to_csv('stamps_log.csv', mode='a', header=not os.path.exists('stamps_log.csv'), index=False)
+    try:
+        # هنا كنستعملو نفس الورقة، Google Sheets غايدير أعمدة جداد إيلا ما كانوش
+        df = conn.read(spreadsheet=SHEET_URL)
+        now = datetime.now().strftime("%Y-%m-%d %H:%M")
+        new_stamp = pd.DataFrame([[name, email, place, now]], columns=['Name', 'Email', 'Place', 'Date'])
+        updated_df = pd.concat([df, new_stamp], ignore_index=True)
+        conn.update(spreadsheet=SHEET_URL, data=updated_df)
+    except:
+        pass
 
 def load_user_stamps(email):
-    if os.path.exists('stamps_log.csv'):
-        df = pd.read_csv('stamps_log.csv')
-        user_stamps = df[df['Email'] == email]
-        return user_stamps.to_dict('records')
+    try:
+        df = conn.read(spreadsheet=SHEET_URL)
+        if 'Place' in df.columns:
+            user_stamps = df[df['Email'].astype(str) == str(email)]
+            return user_stamps.dropna(subset=['Place']).to_dict('records')
+    except:
+        pass
     return []
 
 def save_feedback(name, email, message):
     if message:
-        now = datetime.now().strftime("%Y-%m-%d %H:%M")
-        df = pd.DataFrame([[now, name, email, message]], columns=['Date', 'Name', 'Email', 'Message'])
-        df.to_csv('feedback_log.csv', mode='a', header=not os.path.exists('feedback_log.csv'), index=False)
-        return True
+        try:
+            df = conn.read(spreadsheet=SHEET_URL)
+            now = datetime.now().strftime("%Y-%m-%d %H:%M")
+            new_fb = pd.DataFrame([[now, name, email, message]], columns=['Date', 'Name', 'Email', 'Message'])
+            updated_df = pd.concat([df, new_fb], ignore_index=True)
+            conn.update(spreadsheet=SHEET_URL, data=updated_df)
+            return True
+        except:
+            return False
     return False
 
 # 2. قاموس اللغات
