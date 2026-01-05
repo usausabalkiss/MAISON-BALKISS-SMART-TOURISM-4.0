@@ -141,18 +141,18 @@ else:
     with tab1:
         st.header(t['tab1'])
         
-        # الساروت والرابط المباشر
+        # 1. الساروت والرابط المعتمد (gemini-pro)
         api_key = "AIzaSyBN9cmExKPo5Mn9UAtvdYKohgODPf8hwbA"
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={api_key}"
         
         user_query = st.chat_input("Ask Balkiss AI...")
         
         if user_query:
-            # البنية الصحيحة 100% للطلب
+            # بنية البيانات المضمونة لـ gemini-pro
             data = {
                 "contents": [{
                     "parts": [{
-                        "text": f"You are Balkiss AI. Respond in {lang}: {user_query}"
+                        "text": f"You are a helpful assistant for Maison Balkiss. Respond in {lang}: {user_query}"
                     }]
                 }]
             }
@@ -161,16 +161,19 @@ else:
                 response = requests.post(url, json=data, headers={'Content-Type': 'application/json'})
                 res_json = response.json()
                 
+                # استخراج الجواب
                 if 'candidates' in res_json:
                     answer = res_json['candidates'][0]['content']['parts'][0]['text']
+                elif 'error' in res_json:
+                    # إيلا طلع خطأ، غانعرفو واش من الساروت بالظبط
+                    answer = f"⚠️ API Error: {res_json['error'].get('message')}"
                 else:
-                    # إيلا كاين خطأ، غادي يطبعو ليك باش نعرفوه
-                    answer = f"Error: {res_json.get('error', {}).get('message', 'Unknown Error')}"
+                    answer = "I'm having trouble thinking. Try again please!"
                 
                 st.session_state.chat_history.append({"u": user_query, "a": answer})
                 
             except Exception as e:
-                st.error(f"Connection Error: {e}")
+                st.error(f"Connection error: {e}")
 
         # عرض المحادثة
         for chat in reversed(st.session_state.chat_history):
