@@ -140,7 +140,7 @@ else:
 
     import g4f # استيراد المكتبة البديلة
 
-with tab1:
+   with tab1:
         st.header("Balkiss AI Guide") # استعملت نص مباشر باش نتفاداو NameError ديال t
         
         # 1. تعريف المتغيرات الأساسية (باش ما يبقاش NameError)
