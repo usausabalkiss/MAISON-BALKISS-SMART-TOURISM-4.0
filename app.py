@@ -139,22 +139,28 @@ else:
 
     with tab1:
         st.header(t['tab1'])
-        # استخدام الـ Secrets للأمان
-        api_key = st.secrets.get("GEMINI_API_KEY", "")
+        # حطينا الساروت هنا مباشرة حيت الكود دابا Private ومأمن
+        api_key = "AIzaSyBN9cmExKPo5Mn9UAtvdYKohgODPf8hwbA"
         url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
+        
         user_query = st.chat_input("Ask Maison Balkiss AI...")
-        if user_query and api_key:
-            payload = {"contents": [{"parts": [{"text": f"You are a professional Moroccan Virtual Guide for Maison Balkiss. Answer in {lang}: {user_query}"}]}]}
+        if user_query:
+            # هاد الجزء هو اللي كيخلي الذكاء الاصطناعي يعرف راسو شكون
+            prompt = f"You are a professional Moroccan Virtual Guide for Maison Balkiss. You are expert in Sefrou and Moroccan heritage. Answer the following question in the same language it was asked: {user_query}"
+            
+            payload = {"contents": [{"parts": [{"text": prompt}]}]}
             try:
                 response = requests.post(url, json=payload, headers={"Content-Type": "application/json"}, timeout=15)
                 res_json = response.json()
                 if 'candidates' in res_json:
                     answer = res_json['candidates'][0]['content']['parts'][0]['text']
                 else:
-                    answer = "I'm here to help! Could you please repeat?"
+                    # هاد السطر كيبان إيلا كان الساروت فيه مشكل
+                    answer = "I can hear you, but I need a valid API key to answer correctly. Please check your settings."
                 st.session_state.chat_history.append({"u": user_query, "a": answer})
             except:
-                st.error("AI Assistant is currently offline.")
+                st.error("Connection lost. Please try again.")
+
         for chat in reversed(st.session_state.chat_history):
             st.markdown(f"**👤 You:** {chat['u']}\n\n**🏛️ Maison Balkiss:** {chat['a']}\n---")
 
