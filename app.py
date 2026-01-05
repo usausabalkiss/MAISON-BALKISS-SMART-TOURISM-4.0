@@ -141,41 +141,36 @@ else:
     with tab1:
         st.header(t['tab1'])
         
-        # 1. إعدادات الشاتبوت (الرابط المضمون حالياً)
+        # الساروت والرابط المباشر
         api_key = "AIzaSyBN9cmExKPo5Mn9UAtvdYKohgODPf8hwbA"
-        # استعملنا v1beta و gemini-1.5-flash-latest
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key={api_key}"
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
         
-        user_query = st.chat_input("Ask Balkiss AI anything...")
+        user_query = st.chat_input("Ask Balkiss AI...")
         
         if user_query:
-            prompt = f"""
-            You are 'Balkiss AI', a brilliant guide for Maison Balkiss. 
-            Answer any question accurately in {lang}.
-            User Question: {user_query}
-            """
-            
-            payload = {
-                "contents": [{"parts": [{"text": prompt}]}]
+            # البنية الصحيحة 100% للطلب
+            data = {
+                "contents": [{
+                    "parts": [{
+                        "text": f"You are Balkiss AI. Respond in {lang}: {user_query}"
+                    }]
+                }]
             }
             
             try:
-                response = requests.post(url, json=payload, headers={"Content-Type": "application/json"}, timeout=15)
+                response = requests.post(url, json=data, headers={'Content-Type': 'application/json'})
                 res_json = response.json()
                 
-                # استخراج الجواب
-                if 'candidates' in res_json and len(res_json['candidates']) > 0:
+                if 'candidates' in res_json:
                     answer = res_json['candidates'][0]['content']['parts'][0]['text']
-                elif 'error' in res_json:
-                    # إظهار الخطأ الحقيقي
-                    answer = f"⚠️ API Error: {res_json['error'].get('message')}"
                 else:
-                    answer = "I'm having trouble thinking. Try again please!"
+                    # إيلا كاين خطأ، غادي يطبعو ليك باش نعرفوه
+                    answer = f"Error: {res_json.get('error', {}).get('message', 'Unknown Error')}"
                 
                 st.session_state.chat_history.append({"u": user_query, "a": answer})
                 
             except Exception as e:
-                st.error(f"Connection error: {e}")
+                st.error(f"Connection Error: {e}")
 
         # عرض المحادثة
         for chat in reversed(st.session_state.chat_history):
