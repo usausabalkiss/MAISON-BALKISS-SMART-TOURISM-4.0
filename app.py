@@ -1,4 +1,4 @@
-from streamlit_gsheets import GSheetsConnection
+
 import streamlit as st
 import pandas as pd
 import os
@@ -22,77 +22,41 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- ربط الاتصال بـ Google Sheets ---
-# ملاحظة: تأكدي أنك زدتي import streamlit_gsheets الفوق كاع
-SHEET_URL = "https://docs.google.com/spreadsheets/d/16zz9Cejgq91C28TFhnODjk-0Crs74jh8RSbUFSkMZrY/edit?usp=sharing"
-conn = st.connection("gsheets", type=GSheetsConnection)
+# --- وظائف قاعدة البيانات المحلية (Local Storage) ---
 def save_user_to_db(name, email, password):
-    try:
-        # قراءة البيانات الحالية
-        df = conn.read(spreadsheet=SHEET_URL, usecols=[0,1,2,3]) 
-        
-        # إنشاء السطر الجديد
-        new_row = {
-            'Date': datetime.now().strftime("%Y-%m-%d %H:%M"),
-            'Name': name,
-            'Email': email,
-            'Password': str(password)
-        }
-        
-        # تحويل السطر لـ DataFrame وإضافته
-        new_df = pd.DataFrame([new_row])
-        updated_df = pd.concat([df, new_df], ignore_index=True)
-        
-        # تحديث الورقة (هنا السر: تحديد الجدول بدقة)
-        conn.update(spreadsheet=SHEET_URL, data=updated_df)
-        st.success("Registration Successful!") # تأكيد النجاح
-    except Exception as e:
-        # هذا السطر سيخبرنا بالسبب الحقيقي للخطأ
-        st.error(f"Technical Error: {str(e)}")
+    # إنشاء سطر جديد بالمعلومات
+    new_data = pd.DataFrame([[datetime.now().strftime("%Y-%m-%d %H:%M"), name, email, str(password)]], 
+                            columns=['Date', 'Name', 'Email', 'Password'])
+    # حفظ في ملف CSV محلي (mode='a' تعني إضافة سطر جديد)
+    new_data.to_csv('visitors_log.csv', mode='a', header=not os.path.exists('visitors_log.csv'), index=False)
 
 def check_login(email, password):
-    try:
-        df = conn.read(spreadsheet=SHEET_URL)
-        # كنأكدو أننا كنقارنو نصوص (strings) باش ما يوقعش غلط
+    if os.path.exists('visitors_log.csv'):
+        df = pd.read_csv('visitors_log.csv')
+        # البحث عن المستخدم
         user = df[(df['Email'].astype(str) == str(email)) & (df['Password'].astype(str) == str(password))]
         if not user.empty:
             return user.iloc[0]['Name']
-    except:
-        pass
     return None
 
 def save_stamp_to_db(name, email, place):
-    try:
-        # هنا كنستعملو نفس الورقة، Google Sheets غايدير أعمدة جداد إيلا ما كانوش
-        df = conn.read(spreadsheet=SHEET_URL)
-        now = datetime.now().strftime("%Y-%m-%d %H:%M")
-        new_stamp = pd.DataFrame([[name, email, place, now]], columns=['Name', 'Email', 'Place', 'Date'])
-        updated_df = pd.concat([df, new_stamp], ignore_index=True)
-        conn.update(spreadsheet=SHEET_URL, data=updated_df)
-    except:
-        pass
+    now = datetime.now().strftime("%Y-%m-%d %H:%M")
+    df = pd.DataFrame([[name, email, place, now]], columns=['Name', 'Email', 'Place', 'Date'])
+    df.to_csv('stamps_log.csv', mode='a', header=not os.path.exists('stamps_log.csv'), index=False)
 
 def load_user_stamps(email):
-    try:
-        df = conn.read(spreadsheet=SHEET_URL)
-        if 'Place' in df.columns:
-            user_stamps = df[df['Email'].astype(str) == str(email)]
-            return user_stamps.dropna(subset=['Place']).to_dict('records')
-    except:
-        pass
+    if os.path.exists('stamps_log.csv'):
+        df = pd.read_csv('stamps_log.csv')
+        user_stamps = df[df['Email'].astype(str) == str(email)]
+        return user_stamps.to_dict('records')
     return []
 
 def save_feedback(name, email, message):
     if message:
-        try:
-            df = conn.read(spreadsheet=SHEET_URL)
-            now = datetime.now().strftime("%Y-%m-%d %H:%M")
-            new_fb = pd.DataFrame([[now, name, email, message]], columns=['Date', 'Name', 'Email', 'Message'])
-            updated_df = pd.concat([df, new_fb], ignore_index=True)
-            conn.update(spreadsheet=SHEET_URL, data=updated_df)
-            return True
-        except:
-            return False
+        now = datetime.now().strftime("%Y-%m-%d %H:%M")
+        df = pd.DataFrame([[now, name, email, message]], columns=['Date', 'Name', 'Email', 'Message'])
+        df.to_csv('feedback_log.csv', mode='a', header=not os.path.exists('feedback_log.csv'), index=False)
+        return True
     return False
 
 # 2. قاموس اللغات
