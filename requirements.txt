@@ -4,4 +4,4 @@ requests
 folium
 streamlit-folium
 geopy
-st-gsheets-connection
+g4f
