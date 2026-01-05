@@ -137,27 +137,22 @@ else:
     st.subheader(t['subtitle'])
     tab1, tab2, tab3 = st.tabs([t['tab1'], t['tab2'], t['tab3']])
 
-    with tab1:
+   with tab1:
         st.header(t['tab1'])
-        # الساروت مأمن حيت الكود Private
         api_key = "AIzaSyBN9cmExKPo5Mn9UAtvdYKohgODPf8hwbA"
         url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
-        
         user_query = st.chat_input("Ask Maison Balkiss AI...")
         if user_query:
-            prompt = f"You are a professional Moroccan Virtual Guide for Maison Balkiss. Expert in Sefrou and heritage. Answer in {lang}: {user_query}"
+            # هاد السطر هو السر باش يجاوبك مزيان
+            prompt = f"You are a professional Moroccan Virtual Guide for Maison Balkiss. You are an expert in Sefrou and Moroccan heritage. Answer the following question in the same language it was asked: {user_query}"
             payload = {"contents": [{"parts": [{"text": prompt}]}]}
             try:
                 response = requests.post(url, json=payload, headers={"Content-Type": "application/json"}, timeout=15)
                 res_json = response.json()
-                if 'candidates' in res_json:
-                    answer = res_json['candidates'][0]['content']['parts'][0]['text']
-                else:
-                    answer = "I'm here to help! Could you please repeat your question?"
+                answer = res_json['candidates'][0]['content']['parts'][0]['text'] if 'candidates' in res_json else "Could you please repeat?"
                 st.session_state.chat_history.append({"u": user_query, "a": answer})
             except:
-                st.error("AI Assistant is currently offline.")
-
+                st.error("AI Assistant is offline.")
         for chat in reversed(st.session_state.chat_history):
             st.markdown(f"**👤 You:** {chat['u']}\n\n**🏛️ Maison Balkiss:** {chat['a']}\n---")
 
