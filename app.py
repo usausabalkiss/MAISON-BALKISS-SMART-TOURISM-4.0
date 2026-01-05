@@ -5,8 +5,6 @@ from datetime import datetime
 import requests
 import folium 
 from streamlit_folium import st_folium 
-from geopy.geocoders import Nominatim 
-from streamlit_gsheets import GSheetsConnection
 
 # 1. إعدادات الصفحة والهوية البصرية
 st.set_page_config(page_title="MAISON BALKISS SMART TOURISM 4.0", layout="wide")
@@ -22,13 +20,7 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- الربط مع Google Sheets (طريقة آمنة) ---
-try:
-    conn = st.connection("gsheets", type=GSheetsConnection)
-except:
-    st.error("Please configure Google Sheets Secrets.")
-
-# --- وظائف قاعدة البيانات المحلية ---
+# --- وظائف قاعدة البيانات المحلية (ملفات CSV) ---
 def save_user_to_db(name, email, password):
     df = pd.DataFrame([[datetime.now(), name, email, password]], columns=['Date', 'Name', 'Email', 'Password'])
     df.to_csv('visitors_log.csv', mode='a', header=not os.path.exists('visitors_log.csv'), index=False)
@@ -68,24 +60,12 @@ lang_dict = {
     'English': {
         'welcome': 'Welcome to Maison Balkiss', 'subtitle': 'SMART TOURISM 4.0', 'login_title': 'Visitor Registration',
         'name': 'Full Name', 'email': 'Email / Phone', 'pass': 'Password', 'start': 'Start Discovery', 'tab1': '💬 AI Chatbot',
-        'tab2': '🗺️ Smart Trail', 'tab3': '📜 Heritage Passport', 'feedback': 'Your Opinion Matters',
-        'select_city': 'Select City', 'locate_me': '📍 Locate Me', 'search_place': 'Search for any city or place...',
-        'route_plan': 'Your Smart Tourism Route',
-        'sefrou_title': 'Sefrou: The Garden of Morocco & Cherry Capital',
-        'sefrou_desc': 'Known as "Little Jerusalem", Sefrou is one of the oldest cities in Morocco, famous for its coexistence and the UNESCO Cherry Festival.',
-        'stops': ['🌊 Oued Aggai Falls', '🏘️ Historical Mellah', '🚪 Bab El Maqam', '🕌 Sidi Ali Bousserghine', '🕳️ Kahf El Moumen'],
-        'tips': '💡 Tip: Visit in June for the Cherry Festival!'
+        'tab2': '🗺️ Smart Trail', 'tab3': '📜 Heritage Passport', 'feedback': 'Your Opinion Matters'
     },
     'العربية': {
         'welcome': 'مرحباً بكم في ميزون بلقيس', 'subtitle': 'السياحة الذكية 4.0', 'login_title': 'تسجيل الزوار',
         'name': 'الاسم الكامل', 'email': 'البريد الإلكتروني / الهاتف', 'pass': 'كلمة المرور', 'start': 'ابدأ الاكتشاف', 'tab1': '💬 شاتبوت ذكي',
-        'tab2': '🗺️ المسار الذكي', 'tab3': '📜 الجواز التراثي', 'feedback': 'رأيكم يهمنا',
-        'select_city': 'اختر المدينة', 'locate_me': '📍 تحديد مكاني', 'search_place': 'ابحث عن أي مدينة أو مكان...',
-        'route_plan': 'مسارك السياحي الذكي',
-        'sefrou_title': 'صفرو: حديقة المغرب وعاصمة حب الملوك',
-        'sefrou_desc': 'تلقب بـ "أورشليم الصغيرة"، وهي من أقدم المدن المغربية، مشهورة بتاريخ التعايش ومهرجان حب الملوك المصنف لدى اليونسكو.',
-        'stops': ['🌊 شلال وادي أكاي', '🏘️ الملاح والمدينة العتيقة', '🚪 باب المقام ومجمع الحرف', '🕌 ضريح سيدي علي بوسرغين', '🕳️ كهف المؤمن'],
-        'tips': '💡 نصيحة: زر المدينة في يونيو لحضور مهرجان حب الملوك!'
+        'tab2': '🗺️ المسار الذكي', 'tab3': '📜 الجواز التراثي', 'feedback': 'رأيكم يهمنا'
     }
 }
 
@@ -103,7 +83,6 @@ with st.sidebar:
         if st.text_input("Password", type="password", key="admin_key") == "BALKISS2024":
             st.success("Admin Verified")
             if os.path.exists('visitors_log.csv'):
-                st.subheader("👥 Visitors")
                 st.dataframe(pd.read_csv('visitors_log.csv', on_bad_lines='skip'))
 
 # 5. واجهة الدخول
@@ -137,40 +116,35 @@ else:
 
     with tab1:
         st.header(t['tab1'])
-        # استخدام سيكريت للـ API Key بدلا من وضعه في الكود
-        gemini_api = st.secrets.get("GEMINI_API_KEY", "")
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={gemini_api}"
+        # سحب الـ API Key من الـ Secrets بطريقة آمنة
+        gemini_key = st.secrets.get("GEMINI_API_KEY", "")
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={gemini_key}"
         user_query = st.chat_input("Ask Maison Balkiss AI...")
-        if user_query:
-            payload = {"contents": [{"parts": [{"text": f"You are a professional Moroccan Virtual Guide for Maison Balkiss. Answer in {lang}: {user_query}"}]}]}
+        if user_query and gemini_key:
+            payload = {"contents": [{"parts": [{"text": f"You are a professional guide for Maison Balkiss. Answer in {lang}: {user_query}"}]}]}
             try:
                 response = requests.post(url, json=payload, headers={"Content-Type": "application/json"}, timeout=15)
                 res_json = response.json()
-                answer = res_json['candidates'][0]['content']['parts'][0]['text'] if 'candidates' in res_json else "Guide is busy, try again!"
+                answer = res_json['candidates'][0]['content']['parts'][0]['text'] if 'candidates' in res_json else "Guide is resting."
                 st.session_state.chat_history.append({"u": user_query, "a": answer})
-            except:
-                st.error("AI is temporarily offline.")
+            except: st.error("AI is busy.")
         for chat in reversed(st.session_state.chat_history):
-            st.markdown(f"**👤 You:** {chat['u']}\n\n**🏛️ Maison Balkiss:** {chat['a']}\n---")
+            st.markdown(f"**👤 You:** {chat['u']}\n\n**🏛️ Maison:** {chat['a']}\n---")
 
     with tab2:
         st.header(t['tab2'])
         if os.path.exists('landmarks_data.csv'):
             df_geo = pd.read_csv('landmarks_data.csv')
-            c1, c2 = st.columns(2)
-            with c1:
-                sel_reg = st.selectbox("📍 الجهة", [""] + sorted(df_geo['Region'].unique().tolist()))
+            sel_reg = st.selectbox("📍 Region", [""] + sorted(df_geo['Region'].unique().tolist()))
             if sel_reg:
-                with c2:
-                    cities = sorted(df_geo[df_geo['Region'] == sel_reg]['City'].unique().tolist())
-                    sel_city = st.selectbox("🏙️ المدينة", [""] + cities)
+                cities = sorted(df_geo[df_geo['Region'] == sel_reg]['City'].unique().tolist())
+                sel_city = st.selectbox("🏙️ City", [""] + cities)
                 if sel_city:
                     city_info = df_geo[df_geo['City'] == sel_city].iloc[0]
                     st.info(f"✨ {city_info['Description']}")
                     m = folium.Map(location=[city_info['Lat'], city_info['Lon']], zoom_start=12)
                     folium.Marker([city_info['Lat'], city_info['Lon']], popup=city_info['Place']).add_to(m)
                     st_folium(m, width=700, height=450, key="map_"+sel_city)
-        else: st.warning("⚠️ Data file missing!")
 
     with tab3:
         st.header(f"📜 {t['tab3']}")
@@ -179,30 +153,30 @@ else:
         st.markdown(f"""
             <div style="border: 3px double #D4AF37; padding: 25px; border-radius: 15px; background: #111; text-align: center;">
                 <h2 style="color: #D4AF37;">HERITAGE AMBASSADOR PASSPORT</h2>
-                <p style="color: white;">HOLDER: {st.session_state.visitor_name} | STAMPS: {stamps_count}/10</p>
+                <p style="color: white;">HOLDER: {st.session_state.visitor_name} | STAMPS: {stamps_count} / 10</p>
             </div>
         """, unsafe_allow_html=True)
+        st.progress(min(stamps_count / 10, 1.0))
+        
+        # جمع طابع جديد
+        loc_to_scan = st.selectbox("Current Location:", ["Dar El Ghezl", "Bab El Maqam", "The Mellah", "Oued Aggai Falls"])
+        qr_verify = st.text_input("Code", placeholder="1234")
+        if st.button("🌟 Stamp My Passport"):
+            if qr_verify == "1234":
+                save_stamp_to_db(st.session_state.visitor_name, st.session_state.visitor_email, loc_to_scan)
+                st.success("Stamped!")
+                st.rerun()
 
-        st.subheader("🌟 Exclusive Eco-Travel Services")
-        with st.expander("Get your Personalized Green Itinerary (15€)"):
-            with st.form("purchase_form"):
-                cust_name = st.text_input("Full Name", value=st.session_state.visitor_name)
-                cust_email = st.text_input("Email", value=st.session_state.visitor_email)
-                submit_order = st.form_submit_button("Confirm & Pay via WhatsApp 💬")
-                
-                if submit_order:
-                    order_data = pd.DataFrame([{
-                        "Timestamp": pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S"),
-                        "Guest Name": cust_name, "City": cust_email,
-                        "Passport Type": "PURCHASE: Green Itinerary", "Notes": "Pending"
-                    }])
-                    try:
-                        existing_data = conn.read()
-                        updated_df = pd.concat([existing_data, order_data], ignore_index=True)
-                        conn.update(data=updated_df)
-                        wa_url = f"https://wa.me/212667920412?text=I%20ordered%20the%20Green%20Itinerary"
-                        st.markdown(f'<meta http-equiv="refresh" content="0;url={wa_url}">', unsafe_allow_html=True)
-                    except: st.error("Check your internet or Secrets.")
+    # قسم الخدمات والواتساب
+    st.write("---")
+    st.markdown(f'''
+        <div style="background-color: #ffffff; padding: 20px; border-radius: 15px; text-align: center; border: 2px solid #D4AF37;">
+            <h3 style="color: #000;">🌟 Exclusive Eco-Travel Services</h3>
+            <a href="https://wa.me/212667920412?text=I%20want%20to%20order%20the%20Green%20Itinerary" 
+               target="_blank" style="background-color: #25D366; color: white; padding: 10px 20px; text-decoration: none; border-radius: 10px; font-weight: bold;">
+               Order Now via WhatsApp (15€) 💬
+            </a>
+        </div>
+    ''', unsafe_allow_html=True)
 
-    st.markdown("---")
-    st.markdown("<center>© 2026 MAISON BALKISS - Smart Tourism 4.0</center>", unsafe_allow_html=True)
+st.markdown("<center>© 2026 MAISON BALKISS</center>", unsafe_allow_html=True)
