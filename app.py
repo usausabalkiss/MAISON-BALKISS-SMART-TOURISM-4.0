@@ -6,6 +6,7 @@ import requests
 import folium 
 from streamlit_folium import st_folium 
 from geopy.geocoders import Nominatim 
+from streamlit_gsheets import GSheetsConnection
 
 # 1. إعدادات الصفحة والهوية البصرية
 st.set_page_config(page_title="MAISON BALKISS SMART TOURISM 4.0", layout="wide")
@@ -21,7 +22,13 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- وظائف قاعدة البيانات ---
+# --- الربط مع Google Sheets (طريقة آمنة) ---
+try:
+    conn = st.connection("gsheets", type=GSheetsConnection)
+except:
+    st.error("Please configure Google Sheets Secrets.")
+
+# --- وظائف قاعدة البيانات المحلية ---
 def save_user_to_db(name, email, password):
     df = pd.DataFrame([[datetime.now(), name, email, password]], columns=['Date', 'Name', 'Email', 'Password'])
     df.to_csv('visitors_log.csv', mode='a', header=not os.path.exists('visitors_log.csv'), index=False)
@@ -31,8 +38,6 @@ def check_login(email, password):
         df = pd.read_csv('visitors_log.csv', on_bad_lines='skip')
         user = df[df['Email'] == email]
         if not user.empty:
-            if 'Password' not in df.columns:
-                return user.iloc[0]['Name']
             actual_password = str(user.iloc[0].get('Password', '')).strip()
             if actual_password == "nan" or actual_password == "" or actual_password == str(password):
                 return user.iloc[0]['Name']
@@ -87,7 +92,6 @@ lang_dict = {
 # 3. إدارة الجلسة
 if 'logged_in' not in st.session_state: st.session_state.logged_in = False
 if 'chat_history' not in st.session_state: st.session_state.chat_history = []
-if 'map_center' not in st.session_state: st.session_state.map_center = [33.8247, -4.8278]
 
 # 4. القائمة الجانبية
 with st.sidebar:
@@ -98,22 +102,9 @@ with st.sidebar:
     with st.expander("🔐 Admin Area"):
         if st.text_input("Password", type="password", key="admin_key") == "BALKISS2024":
             st.success("Admin Verified")
-            if os.path.exists('stamps_log.csv'):
-                st.subheader("📍 Stamps Activity")
-                st.dataframe(pd.read_csv('stamps_log.csv'))
-            if os.path.exists('feedback_log.csv'):
-                st.subheader("💬 Feedback")
-                st.dataframe(pd.read_csv('feedback_log.csv'))
             if os.path.exists('visitors_log.csv'):
                 st.subheader("👥 Visitors")
                 st.dataframe(pd.read_csv('visitors_log.csv', on_bad_lines='skip'))
-            if os.path.exists('visitors_log.csv'):
-                df_vis = pd.read_csv('visitors_log.csv')
-                st.download_button(
-                    label="📥 تحميل قائمة الزوار (CSV)",
-                    data=df_vis.to_csv(index=False).encode('utf-8'),
-                    file_name='balkiss_visitors.csv',
-                    mime='text/csv', )
 
 # 5. واجهة الدخول
 if not st.session_state.logged_in:
@@ -146,178 +137,72 @@ else:
 
     with tab1:
         st.header(t['tab1'])
-        api_key = "AIzaSyBN9cmExKPo5Mn9UAtvdYKohgODPf8hwbA"
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
+        # استخدام سيكريت للـ API Key بدلا من وضعه في الكود
+        gemini_api = st.secrets.get("GEMINI_API_KEY", "")
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={gemini_api}"
         user_query = st.chat_input("Ask Maison Balkiss AI...")
         if user_query:
             payload = {"contents": [{"parts": [{"text": f"You are a professional Moroccan Virtual Guide for Maison Balkiss. Answer in {lang}: {user_query}"}]}]}
             try:
                 response = requests.post(url, json=payload, headers={"Content-Type": "application/json"}, timeout=15)
                 res_json = response.json()
-                if 'candidates' in res_json:
-                    answer = res_json['candidates'][0]['content']['parts'][0]['text']
-                else:
-                    answer = "I'm here to help! Could you please repeat?"
+                answer = res_json['candidates'][0]['content']['parts'][0]['text'] if 'candidates' in res_json else "Guide is busy, try again!"
                 st.session_state.chat_history.append({"u": user_query, "a": answer})
             except:
-                st.error("Offline Mode")
+                st.error("AI is temporarily offline.")
         for chat in reversed(st.session_state.chat_history):
             st.markdown(f"**👤 You:** {chat['u']}\n\n**🏛️ Maison Balkiss:** {chat['a']}\n---")
 
     with tab2:
         st.header(t['tab2'])
-        
-        # التأكد من وجود ملف البيانات
         if os.path.exists('landmarks_data.csv'):
             df_geo = pd.read_csv('landmarks_data.csv')
-            
-            # تقسيم الشاشة لـ 2 أعمدة
             c1, c2 = st.columns(2)
             with c1:
-                # اختيار الجهة
                 sel_reg = st.selectbox("📍 الجهة", [""] + sorted(df_geo['Region'].unique().tolist()))
-            
             if sel_reg:
                 with c2:
-                    # اختيار المدينة
                     cities = sorted(df_geo[df_geo['Region'] == sel_reg]['City'].unique().tolist())
                     sel_city = st.selectbox("🏙️ المدينة", [""] + cities)
-                
                 if sel_city:
-                    # جلب معلومات المدينة
                     city_info = df_geo[df_geo['City'] == sel_city].iloc[0]
                     st.info(f"✨ {city_info['Description']}")
-                    
-                    # الخريطة (هادي هي اللي خاصها تكون محاذية للـ if)
                     m = folium.Map(location=[city_info['Lat'], city_info['Lon']], zoom_start=12)
                     folium.Marker([city_info['Lat'], city_info['Lon']], popup=city_info['Place']).add_to(m)
-                    st_folium(m, width=900, height=450, key="map_"+sel_city)
-        else:
-            st.warning("⚠️ ملف landmarks_data.csv مفقود!")
+                    st_folium(m, width=700, height=450, key="map_"+sel_city)
+        else: st.warning("⚠️ Data file missing!")
 
     with tab3:
         st.header(f"📜 {t['tab3']}")
         user_stamps = load_user_stamps(st.session_state.visitor_email)
         stamps_count = len(user_stamps)
-
         st.markdown(f"""
-            <div style="border: 3px double #D4AF37; padding: 25px; border-radius: 15px; background: linear-gradient(145deg, #111, #000); text-align: center;">
-                <h2 style="color: #D4AF37; margin-bottom: 5px;">HERITAGE AMBASSADOR PASSPORT</h2>
-                <p style="color: #D4AF37; font-style: italic;">جواز سفر سفير التراث</p>
-                <hr style="border-color: #D4AF37;">
-                <div style="display: flex; justify-content: space-around; margin-top: 20px;">
-                    <div><p style="color: #D4AF37; font-size: 12px;">HOLDER</p><h3 style="color: white;">{st.session_state.visitor_name}</h3></div>
-                    <div><p style="color: #D4AF37; font-size: 12px;">STAMPS</p><h3 style="color: white;">{stamps_count} / 10</h3></div>
-                </div>
+            <div style="border: 3px double #D4AF37; padding: 25px; border-radius: 15px; background: #111; text-align: center;">
+                <h2 style="color: #D4AF37;">HERITAGE AMBASSADOR PASSPORT</h2>
+                <p style="color: white;">HOLDER: {st.session_state.visitor_name} | STAMPS: {stamps_count}/10</p>
             </div>
         """, unsafe_allow_html=True)
 
-        st.progress(min(stamps_count / 10, 1.0))
-
-        st.subheader("📸 Collect New Stamp")
-        c_scan1, c_scan2 = st.columns([2, 1])
-        with c_scan1:
-            loc_to_scan = st.selectbox("Current Location:", ["Dar El Ghezl", "Bab El Maqam", "The Mellah", "Oued Aggai Falls"])
-        with c_scan2:
-            qr_verify = st.text_input("Verification Code", placeholder="Code from QR", key="qr_input_code")
-        
-        if st.button("🌟 Verify & Stamp"):
-            if qr_verify == "1234":
-                save_stamp_to_db(st.session_state.visitor_name, st.session_state.visitor_email, loc_to_scan)
-                st.success(f"Verified! Stamp added for {loc_to_scan}")
-                st.rerun()
-            else:
-                st.error("Invalid Code!")
-
-        st.markdown("---")
-        st.subheader("🏺 Your Digital Heritage Stamps")
-        cols = st.columns(2)
-        for i, visit in enumerate(reversed(user_stamps)):
-            with cols[i % 2]:
-                st.markdown(f'''
-                    <div style="background-color: #fdf5e6; padding: 15px; border: 3px dashed #b8860b; border-radius: 2px; margin-bottom: 20px; position: relative; box-shadow: 5px 5px 15px rgba(0,0,0,0.3); font-family: 'Courier New', Courier, monospace; min-height: 180px;">
-                        <div style="border: 1px solid #d2b48c; padding: 10px;">
-                            <span style="float: right; color: #b8860b; font-weight: bold; font-size: 18px;">10<br><small>DH</small></span>
-                            <h3 style="margin:0; color: #333; text-transform: uppercase;">{visit['Place']}</h3>
-                            <p style="font-size: 10px; color: #8b4513; margin: 5px 0; font-weight: bold;">ROYAUME DU MAROC - HERITAGE</p>
-                            <hr style="border-top: 1px solid #d2b48c; margin: 10px 0;">
-                            <p style="font-size: 13px; color: #000; margin: 5px 0;"><b>HOLDER:</b> {visit['Name']}</p>
-                            <p style="font-size: 11px; color: #000; margin: 0;"><b>DATE:</b> {visit['Date']}</p>
-                        </div>
-                        <div style="position: absolute; bottom: 10px; right: 10px; width: 85px; height: 85px; border: 4px double rgba(139, 0, 0, 0.7); border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; transform: rotate(-15deg); background: rgba(255, 255, 255, 0.1);">
-                            <div style="border: 1px solid rgba(139, 0, 0, 0.4); border-radius: 50%; width: 70px; height: 70px; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.1;">
-                                <span style="font-size: 6px; color: rgba(139, 0, 0, 0.7); font-weight: bold; margin-bottom: 2px;">★ ★ ★</span>
-                                <span style="font-size: 10px; color: rgba(139, 0, 0, 0.8); font-weight: 900; text-align: center;">MAISON<br>BALKISS</span>
-                                <span style="font-size: 6px; color: rgba(139, 0, 0, 0.7); font-weight: bold; margin-top: 2px;">OFFICIAL</span>
-                            </div>
-                        </div>
-                    </div>
-                ''', unsafe_allow_html=True)
+        st.subheader("🌟 Exclusive Eco-Travel Services")
+        with st.expander("Get your Personalized Green Itinerary (15€)"):
+            with st.form("purchase_form"):
+                cust_name = st.text_input("Full Name", value=st.session_state.visitor_name)
+                cust_email = st.text_input("Email", value=st.session_state.visitor_email)
+                submit_order = st.form_submit_button("Confirm & Pay via WhatsApp 💬")
+                
+                if submit_order:
+                    order_data = pd.DataFrame([{
+                        "Timestamp": pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        "Guest Name": cust_name, "City": cust_email,
+                        "Passport Type": "PURCHASE: Green Itinerary", "Notes": "Pending"
+                    }])
+                    try:
+                        existing_data = conn.read()
+                        updated_df = pd.concat([existing_data, order_data], ignore_index=True)
+                        conn.update(data=updated_df)
+                        wa_url = f"https://wa.me/212667920412?text=I%20ordered%20the%20Green%20Itinerary"
+                        st.markdown(f'<meta http-equiv="refresh" content="0;url={wa_url}">', unsafe_allow_html=True)
+                    except: st.error("Check your internet or Secrets.")
 
     st.markdown("---")
-    st.subheader(t['feedback'])
-    user_msg = st.text_area("Your Feedback...", key="feedback_area_unique")
-    if st.button("Submit Feedback"):
-        if save_feedback(st.session_state.visitor_name, st.session_state.visitor_email, user_msg):
-            st.success("Success! Feedback recorded.")
-# --- تزيديه فآخر الملف ---
-st.write("---") # خط فاصل
-st.markdown(f'''
-    <div style="background-color: #ffffff; padding: 25px; border-radius: 15px; border: 2px solid #e0e0e0; text-align: center; box-shadow: 2px 2px 10px rgba(0,0,0,0.1);">
-        <h2 style="color: #2e7d32;">🌟 Exclusive Eco-Travel Services</h2>
-        <p style="font-size: 18px; color: #555;">Support Maison Balkiss and get your Personalized Green Itinerary!</p>
-        <p style="font-weight: bold; font-size: 20px;">Price: 15€</p>
-        <br>
-        <a href="https://wa.me/212667920412?text=Hello%20Maison%20Balkiss,%20I%20want%20to%20order%20my%20Eco-Travel%20Plan" 
-           target="_blank" 
-           style="background-color: #25D366; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block; font-size: 18px;">
-           Order Now via WhatsApp 💬
-        </a>
-        <p style="margin-top: 15px; font-size: 12px; color: #888;">Payments via PayPal or Bank Transfer</p>
-    </div>
-''', unsafe_allow_html=True)
-st.markdown("<center>© 2026 MAISON BALKISS - Smart Tourism 4.0</center>", unsafe_allow_html=True)
-# --- تزيديه فآخر الملف ---
-st.write("---") 
-st.subheader("🌟 Exclusive Eco-Travel Services")
-
-with st.expander("Get your Personalized Green Itinerary (15€)"):
-    st.write("Plan your perfect eco-friendly trip to Morocco with our experts.")
-    
-    # فورم صغير خاص بالشراء
-    with st.form("purchase_form"):
-        cust_name = st.text_input("Your Full Name")
-        cust_email = st.text_input("Your Email")
-        service = "Green Itinerary - 15€"
-        
-        submit_order = st.form_submit_button("Confirm & Pay via WhatsApp 💬")
-        
-        if submit_order:
-            if cust_name and cust_email:
-                # 1. إرسال البيانات للجدول
-                order_data = pd.DataFrame([{
-                    "Timestamp": pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S"),
-                    "Guest Name": cust_name,
-                    "City": cust_email, # استعملنا خانة المدينة للإيميل مؤقتاً
-                    "Passport Type": "PURCHASE: " + service,
-                    "Notes": "Waiting for payment"
-                }])
-                
-                try:
-                    # قراءة البيانات القديمة وإضافة الجديدة
-                    existing_data = conn.read()
-                    updated_df = pd.concat([existing_data, order_data], ignore_index=True)
-                    conn.update(data=updated_df)
-                    
-                    st.success("Order registered! Redirecting to WhatsApp...")
-                    
-                    # 2. رابط الواتساب مع رسالة جاهزة
-                    wa_url = f"https://wa.me/2126XXXXXXXX?text=Hello%20Maison%20Balkiss!%20My%20name%20is%20{cust_name}.%20I%20just%20ordered%20the%20{service}.%20How%20can%20I%20pay?"
-                    
-                    # فتح الواتساب تلقائياً
-                    st.markdown(f'<meta http-equiv="refresh" content="0;url={wa_url}">', unsafe_allow_html=True)
-                    
-                except Exception as e:
-                    st.error("Connection error. Please contact us directly via WhatsApp.")
-            else:
-                st.warning("Please fill in your name and email.")
+    st.markdown("<center>© 2026 MAISON BALKISS - Smart Tourism 4.0</center>", unsafe_allow_html=True)
