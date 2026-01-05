@@ -139,25 +139,35 @@ else:
 
     with tab1:
         st.header(t['tab1'])
+        # الساروت ديالك
         api_key = "AIzaSyBN9cmExKPo5Mn9UAtvdYKohgODPf8hwbA"
         url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
         
         user_query = st.chat_input("Ask Maison Balkiss AI...")
         if user_query:
-            # هاد السطر هو اللي كيخلي الذكاء الاصطناعي يعرف راسو شكون ويجاوب بنفس لغة السؤال
-            prompt = f"You are a professional Moroccan Virtual Guide for Maison Balkiss. You are an expert in Sefrou and Moroccan heritage. Answer the following question in the same language it was asked: {user_query}"
-            payload = {"contents": [{"parts": [{"text": prompt}]}]}
+            # تعليمات واضحة للشاتبوت
+            payload = {
+                "contents": [{
+                    "parts": [{"text": f"You are an expert guide for Maison Balkiss and Sefrou. Answer in {lang}: {user_query}"}]
+                }]
+            }
             try:
                 response = requests.post(url, json=payload, headers={"Content-Type": "application/json"}, timeout=15)
                 res_json = response.json()
-                if 'candidates' in res_json:
+                
+                # هنا فين كنفككو الجواب بذكاء
+                if 'candidates' in res_json and len(res_json['candidates']) > 0:
                     answer = res_json['candidates'][0]['content']['parts'][0]['text']
+                elif 'error' in res_json:
+                    answer = f"API Error: {res_json['error']['message']}"
                 else:
-                    answer = "I'm here to help! Could you please repeat?"
+                    answer = "I can hear you, but I'm having trouble connecting to my brain. Please try again!"
+                
                 st.session_state.chat_history.append({"u": user_query, "a": answer})
-            except:
-                st.error("AI Assistant is offline.")
+            except Exception as e:
+                st.error(f"Connection Error: {e}")
 
+        # عرض المحادثة
         for chat in reversed(st.session_state.chat_history):
             st.markdown(f"**👤 You:** {chat['u']}\n\n**🏛️ Maison Balkiss:** {chat['a']}\n---")
 
