@@ -28,13 +28,27 @@ SHEET_URL = "https://docs.google.com/spreadsheets/d/16zz9Cejgq91C28TFhnODjk-0Crs
 conn = st.connection("gsheets", type=GSheetsConnection)
 def save_user_to_db(name, email, password):
     try:
-        df = conn.read(spreadsheet=SHEET_URL)
-        new_user = pd.DataFrame([[datetime.now().strftime("%Y-%m-%d %H:%M"), name, email, str(password)]], 
-                                columns=['Date', 'Name', 'Email', 'Password'])
-        updated_df = pd.concat([df, new_user], ignore_index=True)
+        # قراءة البيانات الحالية
+        df = conn.read(spreadsheet=SHEET_URL, usecols=[0,1,2,3]) 
+        
+        # إنشاء السطر الجديد
+        new_row = {
+            'Date': datetime.now().strftime("%Y-%m-%d %H:%M"),
+            'Name': name,
+            'Email': email,
+            'Password': str(password)
+        }
+        
+        # تحويل السطر لـ DataFrame وإضافته
+        new_df = pd.DataFrame([new_row])
+        updated_df = pd.concat([df, new_df], ignore_index=True)
+        
+        # تحديث الورقة (هنا السر: تحديد الجدول بدقة)
         conn.update(spreadsheet=SHEET_URL, data=updated_df)
-    except:
-        st.error("Error saving to Google Sheets")
+        st.success("Registration Successful!") # تأكيد النجاح
+    except Exception as e:
+        # هذا السطر سيخبرنا بالسبب الحقيقي للخطأ
+        st.error(f"Technical Error: {str(e)}")
 
 def check_login(email, password):
     try:
