@@ -141,20 +141,17 @@ else:
     with tab1:
         st.header(t['tab1'])
         
-        # 1. إعدادات الشاتبوت (الرابط المصحح لنسخة v1)
+        # 1. إعدادات الشاتبوت (الرابط الرسمي المعتمد حالياً)
         api_key = "AIzaSyBN9cmExKPo5Mn9UAtvdYKohgODPf8hwbA"
-        # استعملنا v1 بلاصة v1beta واستعملنا gemini-1.5-flash كاسم كامل
+        # الرابط الصحيح لـ Gemini 1.5 Flash في نسخة v1
         url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
         
         user_query = st.chat_input("Ask Balkiss AI anything...")
         
         if user_query:
             prompt = f"""
-            You are 'Balkiss AI', a helpful and professional guide for Maison Balkiss and an expert in all fields.
-            - Answer the user's question accurately in {lang}.
-            - You can answer ANY general question (history, science, cooking, etc.).
-            - If the question is about Sefrou or Maison Balkiss, be extra helpful.
-            
+            You are 'Balkiss AI', an expert guide for Maison Balkiss and Sefrou. 
+            Answer any question politely in {lang}.
             User Question: {user_query}
             """
             
@@ -166,14 +163,14 @@ else:
                 response = requests.post(url, json=payload, headers={"Content-Type": "application/json"}, timeout=15)
                 res_json = response.json()
                 
-                # التأكد من الحصول على الجواب
+                # فحص الرد بذكاء
                 if 'candidates' in res_json and len(res_json['candidates']) > 0:
                     answer = res_json['candidates'][0]['content']['parts'][0]['text']
                 elif 'error' in res_json:
-                    # عرض الخطأ بطريقة واضحة إيلا باقي كاين
-                    answer = f"⚠️ API Error: {res_json['error']['message']}"
+                    # هنا غانعرفو واش الموديل اللي غلط ولا الساروت
+                    answer = f"⚠️ API Error: {res_json['error'].get('message')}"
                 else:
-                    answer = "I'm having trouble retrieving the answer. Please try again."
+                    answer = "I'm having trouble connecting. Please try again."
                 
                 st.session_state.chat_history.append({"u": user_query, "a": answer})
                 
@@ -181,13 +178,11 @@ else:
                 st.error(f"Connection error: {e}")
 
         # عرض المحادثة
-        st.markdown("---")
         for chat in reversed(st.session_state.chat_history):
-            with st.chat_message("user", avatar="👤"):
+            with st.chat_message("user"):
                 st.write(chat['u'])
             with st.chat_message("assistant", avatar="🏛️"):
                 st.write(chat['a'])
-            st.markdown("<br>", unsafe_allow_html=True)
     with tab2:
         st.header(t['tab2'])
         if os.path.exists('landmarks_data.csv'):
