@@ -141,17 +141,17 @@ else:
     with tab1:
         st.header(t['tab1'])
         
-        # 1. إعدادات الشاتبوت (الرابط الرسمي المعتمد حالياً)
+        # 1. إعدادات الشاتبوت (الرابط المضمون حالياً)
         api_key = "AIzaSyBN9cmExKPo5Mn9UAtvdYKohgODPf8hwbA"
-        # الرابط الصحيح لـ Gemini 1.5 Flash في نسخة v1
-        url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
+        # استعملنا v1beta و gemini-1.5-flash-latest
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key={api_key}"
         
         user_query = st.chat_input("Ask Balkiss AI anything...")
         
         if user_query:
             prompt = f"""
-            You are 'Balkiss AI', an expert guide for Maison Balkiss and Sefrou. 
-            Answer any question politely in {lang}.
+            You are 'Balkiss AI', a brilliant guide for Maison Balkiss. 
+            Answer any question accurately in {lang}.
             User Question: {user_query}
             """
             
@@ -163,14 +163,14 @@ else:
                 response = requests.post(url, json=payload, headers={"Content-Type": "application/json"}, timeout=15)
                 res_json = response.json()
                 
-                # فحص الرد بذكاء
+                # استخراج الجواب
                 if 'candidates' in res_json and len(res_json['candidates']) > 0:
                     answer = res_json['candidates'][0]['content']['parts'][0]['text']
                 elif 'error' in res_json:
-                    # هنا غانعرفو واش الموديل اللي غلط ولا الساروت
+                    # إظهار الخطأ الحقيقي
                     answer = f"⚠️ API Error: {res_json['error'].get('message')}"
                 else:
-                    answer = "I'm having trouble connecting. Please try again."
+                    answer = "I'm having trouble thinking. Try again please!"
                 
                 st.session_state.chat_history.append({"u": user_query, "a": answer})
                 
