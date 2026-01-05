@@ -5,6 +5,7 @@ from datetime import datetime
 import requests
 import folium 
 from streamlit_folium import st_folium 
+from geopy.geocoders import Nominatim 
 
 # 1. إعدادات الصفحة والهوية البصرية
 st.set_page_config(page_title="MAISON BALKISS SMART TOURISM 4.0", layout="wide")
@@ -20,7 +21,7 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- وظائف قاعدة البيانات المحلية (ملفات CSV) ---
+# --- وظائف قاعدة البيانات ---
 def save_user_to_db(name, email, password):
     df = pd.DataFrame([[datetime.now(), name, email, password]], columns=['Date', 'Name', 'Email', 'Password'])
     df.to_csv('visitors_log.csv', mode='a', header=not os.path.exists('visitors_log.csv'), index=False)
@@ -30,6 +31,8 @@ def check_login(email, password):
         df = pd.read_csv('visitors_log.csv', on_bad_lines='skip')
         user = df[df['Email'] == email]
         if not user.empty:
+            if 'Password' not in df.columns:
+                return user.iloc[0]['Name']
             actual_password = str(user.iloc[0].get('Password', '')).strip()
             if actual_password == "nan" or actual_password == "" or actual_password == str(password):
                 return user.iloc[0]['Name']
@@ -82,6 +85,8 @@ with st.sidebar:
     with st.expander("🔐 Admin Area"):
         if st.text_input("Password", type="password", key="admin_key") == "BALKISS2024":
             st.success("Admin Verified")
+            if os.path.exists('stamps_log.csv'):
+                st.dataframe(pd.read_csv('stamps_log.csv'))
             if os.path.exists('visitors_log.csv'):
                 st.dataframe(pd.read_csv('visitors_log.csv', on_bad_lines='skip'))
 
@@ -116,18 +121,18 @@ else:
 
     with tab1:
         st.header(t['tab1'])
-        # سحب الـ API Key من الـ Secrets بطريقة آمنة
-        gemini_key = st.secrets.get("GEMINI_API_KEY", "")
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={gemini_key}"
+        # تم سحب المفتاح من Secrets لضمان الأمان
+        api_key = st.secrets.get("GEMINI_API_KEY", "")
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
         user_query = st.chat_input("Ask Maison Balkiss AI...")
-        if user_query and gemini_key:
+        if user_query and api_key:
             payload = {"contents": [{"parts": [{"text": f"You are a professional guide for Maison Balkiss. Answer in {lang}: {user_query}"}]}]}
             try:
                 response = requests.post(url, json=payload, headers={"Content-Type": "application/json"}, timeout=15)
                 res_json = response.json()
-                answer = res_json['candidates'][0]['content']['parts'][0]['text'] if 'candidates' in res_json else "Guide is resting."
+                answer = res_json['candidates'][0]['content']['parts'][0]['text'] if 'candidates' in res_json else "Offline Mode."
                 st.session_state.chat_history.append({"u": user_query, "a": answer})
-            except: st.error("AI is busy.")
+            except: st.error("AI Busy")
         for chat in reversed(st.session_state.chat_history):
             st.markdown(f"**👤 You:** {chat['u']}\n\n**🏛️ Maison:** {chat['a']}\n---")
 
@@ -135,16 +140,19 @@ else:
         st.header(t['tab2'])
         if os.path.exists('landmarks_data.csv'):
             df_geo = pd.read_csv('landmarks_data.csv')
-            sel_reg = st.selectbox("📍 Region", [""] + sorted(df_geo['Region'].unique().tolist()))
+            c1, c2 = st.columns(2)
+            with c1:
+                sel_reg = st.selectbox("📍 Region", [""] + sorted(df_geo['Region'].unique().tolist()))
             if sel_reg:
-                cities = sorted(df_geo[df_geo['Region'] == sel_reg]['City'].unique().tolist())
-                sel_city = st.selectbox("🏙️ City", [""] + cities)
+                with c2:
+                    cities = sorted(df_geo[df_geo['Region'] == sel_reg]['City'].unique().tolist())
+                    sel_city = st.selectbox("🏙️ City", [""] + cities)
                 if sel_city:
                     city_info = df_geo[df_geo['City'] == sel_city].iloc[0]
                     st.info(f"✨ {city_info['Description']}")
                     m = folium.Map(location=[city_info['Lat'], city_info['Lon']], zoom_start=12)
                     folium.Marker([city_info['Lat'], city_info['Lon']], popup=city_info['Place']).add_to(m)
-                    st_folium(m, width=700, height=450, key="map_"+sel_city)
+                    st_folium(m, width=900, height=450, key="map_"+sel_city)
 
     with tab3:
         st.header(f"📜 {t['tab3']}")
@@ -158,14 +166,19 @@ else:
         """, unsafe_allow_html=True)
         st.progress(min(stamps_count / 10, 1.0))
         
-        # جمع طابع جديد
         loc_to_scan = st.selectbox("Current Location:", ["Dar El Ghezl", "Bab El Maqam", "The Mellah", "Oued Aggai Falls"])
         qr_verify = st.text_input("Code", placeholder="1234")
-        if st.button("🌟 Stamp My Passport"):
+        if st.button("🌟 Verify & Stamp"):
             if qr_verify == "1234":
                 save_stamp_to_db(st.session_state.visitor_name, st.session_state.visitor_email, loc_to_scan)
-                st.success("Stamped!")
-                st.rerun()
+                st.success("Stamp added!")
+                st.rerun() # تحديث الصفحة لرؤية الطابع فورا
+
+        st.subheader("🏺 Your Digital Stamps")
+        cols = st.columns(2)
+        for i, visit in enumerate(reversed(user_stamps)):
+            with cols[i % 2]:
+                st.markdown(f'<div style="background:#fdf5e6; padding:15px; border:2px dashed #b8860b; color:black; border-radius:5px; margin-bottom:10px;"><b>{visit["Place"]}</b><br>DATE: {visit["Date"]}</div>', unsafe_allow_html=True)
 
     # قسم الخدمات والواتساب
     st.write("---")
