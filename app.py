@@ -138,49 +138,34 @@ else:
     st.subheader(t['subtitle'])
     tab1, tab2, tab3 = st.tabs([t['tab1'], t['tab2'], t['tab3']])
 
-    with tab1:
-        st.header(t['tab1'])
-        
-        # 1. الساروت والرابط المعتمد (gemini-pro)
-        api_key = "AIzaSyBN9cmExKPo5Mn9UAtvdYKohgODPf8hwbA"
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={api_key}"
-        
-        user_query = st.chat_input("Ask Balkiss AI...")
-        
-        if user_query:
-            # بنية البيانات المضمونة لـ gemini-pro
-            data = {
-                "contents": [{
-                    "parts": [{
-                        "text": f"You are a helpful assistant for Maison Balkiss. Respond in {lang}: {user_query}"
-                    }]
-                }]
-            }
-            
-            try:
-                response = requests.post(url, json=data, headers={'Content-Type': 'application/json'})
-                res_json = response.json()
-                
-                # استخراج الجواب
-                if 'candidates' in res_json:
-                    answer = res_json['candidates'][0]['content']['parts'][0]['text']
-                elif 'error' in res_json:
-                    # إيلا طلع خطأ، غانعرفو واش من الساروت بالظبط
-                    answer = f"⚠️ API Error: {res_json['error'].get('message')}"
-                else:
-                    answer = "I'm having trouble thinking. Try again please!"
-                
-                st.session_state.chat_history.append({"u": user_query, "a": answer})
-                
-            except Exception as e:
-                st.error(f"Connection error: {e}")
+    import g4f # استيراد المكتبة البديلة
 
-        # عرض المحادثة
-        for chat in reversed(st.session_state.chat_history):
-            with st.chat_message("user"):
-                st.write(chat['u'])
-            with st.chat_message("assistant", avatar="🏛️"):
-                st.write(chat['a'])
+with tab1:
+    st.header(t['tab1'])
+    
+    # مكان إدخال السؤال
+    user_query = st.chat_input("Ask Maison Balkiss AI anything...")
+    
+    if user_query:
+        try:
+            # هنا كنستعملو مزود مجاني (بحال GPT-4) بلا ساروت
+            response = g4f.ChatCompletion.create(
+                model=g4f.models.gpt_4,
+                messages=[{"role": "user", "content": f"You are a helpful guide for Maison Balkiss in Sefrou. Answer in {lang}: {user_query}"}],
+            )
+            
+            answer = response
+            st.session_state.chat_history.append({"u": user_query, "a": answer})
+            
+        except Exception as e:
+            st.error("I'm resting right now, please try asking again in a minute!")
+
+    # عرض المحادثة
+    for chat in reversed(st.session_state.chat_history):
+        with st.chat_message("user"):
+            st.write(chat['u'])
+        with st.chat_message("assistant", avatar="🏛️"):
+            st.write(chat['a'])
     with tab2:
         st.header(t['tab2'])
         if os.path.exists('landmarks_data.csv'):
