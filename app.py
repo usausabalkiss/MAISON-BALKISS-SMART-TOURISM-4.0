@@ -141,31 +141,50 @@ else:
     import g4f # استيراد المكتبة البديلة
 
 with tab1:
-    st.header(t['tab1'])
-    
-    # مكان إدخال السؤال
-    user_query = st.chat_input("Ask Maison Balkiss AI anything...")
-    
-    if user_query:
-        try:
-            # هنا كنستعملو مزود مجاني (بحال GPT-4) بلا ساروت
-            response = g4f.ChatCompletion.create(
-                model=g4f.models.gpt_4,
-                messages=[{"role": "user", "content": f"You are a helpful guide for Maison Balkiss in Sefrou. Answer in {lang}: {user_query}"}],
-            )
-            
-            answer = response
-            st.session_state.chat_history.append({"u": user_query, "a": answer})
-            
-        except Exception as e:
-            st.error("I'm resting right now, please try asking again in a minute!")
+        st.header("Balkiss AI Guide") # استعملت نص مباشر باش نتفاداو NameError ديال t
+        
+        # 1. تعريف المتغيرات الأساسية (باش ما يبقاش NameError)
+        api_key = "AIzaSyBN9cmExKPo5Mn9UAtvdYKohgODPf8hwbA"
+        # هاد الرابط هو "الساروت" اللي كيخدم فـ 2026 لجميع الموديلات
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
+        
+        # التأكد من وجود سجل المحادثة
+        if "chat_history" not in st.session_state:
+            st.session_state.chat_history = []
 
-    # عرض المحادثة
-    for chat in reversed(st.session_state.chat_history):
-        with st.chat_message("user"):
-            st.write(chat['u'])
-        with st.chat_message("assistant", avatar="🏛️"):
-            st.write(chat['a'])
+        # 2. واجهة الإدخال
+        user_query = st.chat_input("Ask me anything about Maison Balkiss...")
+        
+        if user_query:
+            # صياغة الطلب (Payload)
+            payload = {
+                "contents": [{"parts": [{"text": user_query}]}]
+            }
+            
+            try:
+                import requests
+                response = requests.post(url, json=payload, headers={'Content-Type': 'application/json'})
+                res_json = response.json()
+                
+                if 'candidates' in res_json:
+                    answer = res_json['candidates'][0]['content']['parts'][0]['text']
+                elif 'error' in res_json:
+                    answer = f"⚠️ AI Error: {res_json['error'].get('message')}"
+                else:
+                    answer = "I'm thinking... please try again!"
+                
+                # إضافة للمحادثة
+                st.session_state.chat_history.append({"u": user_query, "a": answer})
+                
+            except Exception as e:
+                st.error(f"Connection Error: {e}")
+
+        # 3. عرض المحادثة
+        for chat in reversed(st.session_state.chat_history):
+            with st.chat_message("user"):
+                st.write(chat['u'])
+            with st.chat_message("assistant", avatar="🏛️"):
+                st.write(chat['a'])
     with tab2:
         st.header(t['tab2'])
         if os.path.exists('landmarks_data.csv'):
