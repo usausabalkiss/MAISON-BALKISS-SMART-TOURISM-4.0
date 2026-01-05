@@ -140,37 +140,61 @@ else:
 
     with tab1:
         st.header(t['tab1'])
-        # الساروت ديالك
+        
+        # 1. إعدادات الشاتبوت والساروت
         api_key = "AIzaSyBN9cmExKPo5Mn9UAtvdYKohgODPf8hwbA"
         url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
         
-        user_query = st.chat_input("Ask Maison Balkiss AI...")
+        # 2. واجهة الشات (إدخال السؤال)
+        user_query = st.chat_input("Ask Balkiss AI anything...")
+        
         if user_query:
-            # تعليمات واضحة للشاتبوت
+            # تعليمات ذكية: تخليه يجاوب على أي حاجة مع الحفاظ على هوية المكان
+            prompt = f"""
+            You are 'Balkiss AI', a brilliant and friendly virtual guide for Maison Balkiss and an expert in all fields.
+            - Answer the user's question accurately in {lang}.
+            - You can answer ANY general question (history, science, life advice, cooking, etc.).
+            - If the question is about Sefrou or Maison Balkiss, be very helpful and descriptive.
+            - Keep a professional yet warm Moroccan hospitality tone.
+            
+            User says: {user_query}
+            """
+            
             payload = {
-                "contents": [{
-                    "parts": [{"text": f"You are an expert guide for Maison Balkiss and Sefrou. Answer in {lang}: {user_query}"}]
-                }]
+                "contents": [{"parts": [{"text": prompt}]}]
             }
+            
             try:
+                # إرسال الطلب للذكاء الاصطناعي
                 response = requests.post(url, json=payload, headers={"Content-Type": "application/json"}, timeout=15)
                 res_json = response.json()
                 
-                # هنا فين كنفككو الجواب بذكاء
+                # تحليل الجواب
                 if 'candidates' in res_json and len(res_json['candidates']) > 0:
                     answer = res_json['candidates'][0]['content']['parts'][0]['text']
                 elif 'error' in res_json:
-                    answer = f"API Error: {res_json['error']['message']}"
+                    answer = f"⚠️ API Error: {res_json['error']['message']}"
                 else:
-                    answer = "I can hear you, but I'm having trouble connecting to my brain. Please try again!"
+                    answer = "I'm thinking... but I can't reach my brain right now. Try again!"
                 
+                # حفظ في ذاكرة الجلسة
                 st.session_state.chat_history.append({"u": user_query, "a": answer})
+                
             except Exception as e:
-                st.error(f"Connection Error: {e}")
+                st.error(f"Connection failed: {e}")
 
-        # عرض المحادثة
+        # 3. عرض المحادثة بشكل جميل (الأحدث فوق)
+        st.markdown("---")
         for chat in reversed(st.session_state.chat_history):
-            st.markdown(f"**👤 You:** {chat['u']}\n\n**🏛️ Maison Balkiss:** {chat['a']}\n---")
+            # رسالة المستخدم
+            with st.chat_message("user", avatar="👤"):
+                st.write(chat['u'])
+            
+            # رسالة الشاتبوت
+            with st.chat_message("assistant", avatar="🏛️"):
+                st.write(chat['a'])
+            
+            st.markdown("<br>", unsafe_allow_html=True)
 
     with tab2:
         st.header(t['tab2'])
