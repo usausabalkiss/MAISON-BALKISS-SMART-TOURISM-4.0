@@ -6,6 +6,7 @@ from datetime import datetime
 import requests
 import folium 
 from streamlit_folium import st_folium 
+from geopy.geocoders import Nominatim 
 
 # 1. إعدادات الصفحة والهوية البصرية
 st.set_page_config(page_title="MAISON BALKISS SMART TOURISM 4.0", layout="wide")
@@ -46,19 +47,26 @@ def load_user_stamps(email):
         return user_stamps.to_dict('records')
     return []
 
-# 2. قاموس اللغات
+def save_feedback(name, email, message):
+    if message:
+        df = pd.DataFrame([[datetime.now().strftime("%Y-%m-%d %H:%M"), name, email, message]], columns=['Date', 'Name', 'Email', 'Message'])
+        df.to_csv('feedback_log.csv', mode='a', header=not os.path.exists('feedback_log.csv'), index=False)
+        return True
+    return False
+
+# 2. قاموس اللغات (مصحح)
 lang_dict = {
     'English': {
         'welcome': 'Welcome to Maison Balkiss', 'subtitle': 'SMART TOURISM 4.0', 'login_title': 'Visitor Registration',
         'name': 'Full Name', 'email': 'Email / Phone', 'pass': 'Password', 'start': 'Start Discovery', 
-        'tab1': '💬 Heritage Hubs', 'tab2': '🗺️ Smart Trail', 'tab3': '📜 Heritage Passport',
-        'gps_btn': '🛰️ Claim Local Stamp', 'gps_wait': 'Locating you...'
+        'tab1': '🏛️ Heritage Hubs', 'tab2': '🗺️ Smart Trail', 'tab3': '📜 Heritage Passport',
+        'gps_btn': '🛰️ Claim Local Heritage Stamp', 'gps_wait': 'Identifying your location...'
     },
     'العربية': {
         'welcome': 'مرحباً بكم في ميزون بلقيس', 'subtitle': 'السياحة الذكية 4.0', 'login_title': 'تسجيل الزوار',
         'name': 'الاسم الكامل', 'email': 'البريد الإلكتروني / الهاتف', 'pass': 'كلمة المرور', 'start': 'ابدأ الاكتشاف', 
-        'tab1': '💬 الأقطاب التراثية', 'tab2': '🗺️ المسار الذكي', 'tab3': '📜 الجواز التراثي',
-        'gps_btn': '🛰️ أحصل على ختم الموقع', 'gps_wait': 'جاري تحديد موقعك...'
+        'tab1': '🏛️ الأقطاب التراثية', 'tab2': '🗺️ المسار الذكي', 'tab3': '📜 الجواز التراثي',
+        'gps_btn': '🛰️ أحصل على ختم الموقع الحالي', 'gps_wait': 'جاري تحديد موقعك...'
     }
 }
 
@@ -71,27 +79,26 @@ with st.sidebar:
     lang = st.selectbox("🌐 Language", ['English', 'العربية'])
     t = lang_dict[lang]
     st.markdown("---")
-    with st.expander("🔐 Admin"):
-        if st.text_input("Password", type="password") == "BALKISS2024":
+    with st.expander("🔐 Admin Area"):
+        if st.text_input("Password", type="password", key="admin_key") == "BALKISS2024":
             if os.path.exists('stamps_log.csv'): st.dataframe(pd.read_csv('stamps_log.csv'))
 
 # 5. واجهة الدخول
 if not st.session_state.logged_in:
-    tab_log, tab_reg = st.tabs([t['login_title'], "New Account"])
+    tab_log, tab_reg = st.tabs([t['login_title'], "📝 New Account"])
     with tab_reg:
         v_name = st.text_input(t['name'], key="reg_n")
         v_email = st.text_input(t['email'], key="reg_e")
         v_pass = st.text_input(t['pass'], type="password", key="reg_p")
-        if st.button("Register"):
-            save_user_to_db(v_name, v_email, v_pass)
-            st.success("Account created!")
+        if st.button("Create Account"):
+            if v_name and v_email and v_pass:
+                save_user_to_db(v_name, v_email, v_pass); st.success("Account created!")
     with tab_log:
-        log_e = st.text_input(t['email'], key="log_e")
-        log_p = st.text_input(t['pass'], type="password", key="log_p")
+        le, lp = st.text_input(t['email'], key="le"), st.text_input(t['pass'], type="password", key="lp")
         if st.button(t['start']):
-            name = check_login(log_e, log_p)
+            name = check_login(le, lp)
             if name:
-                st.session_state.logged_in, st.session_state.visitor_name, st.session_state.visitor_email = True, name, log_e
+                st.session_state.logged_in, st.session_state.visitor_name, st.session_state.visitor_email = True, name, le
                 st.rerun()
 
 # 6. الواجهة الرئيسية
@@ -100,76 +107,100 @@ else:
     tab1, tab2, tab3 = st.tabs([t['tab1'], t['tab2'], t['tab3']])
 
     with tab1:
-        # --- كود الأقطاب المغربية (North, Center, South, Desert, Coast) ---
+        # التاب 1: الأقطاب (معدل السمية)
+        hub_lang = st.radio("🌐 Language / اللغة", ("English", "العربية"), horizontal=True, key="h_lang")
         hubs_data = {
-            "North": {"en": "Mediterranean Soul", "ar": "روح المتوسط", "img": "https://images.unsplash.com/photo-1548013146-72479768bbaa?w=800"},
-            "Center": {"en": "Spiritual Heartland", "ar": "القلب الروحاني", "img": "https://images.unsplash.com/photo-1549944850-84e00be4203b?w=800"},
-            "South": {"en": "Red Oasis", "ar": "واحة البهجة", "img": "https://images.unsplash.com/photo-1597212618440-806262de496b?w=800"},
-            "Desert": {"en": "Golden Sahara", "ar": "الصحراء الذهبية", "img": "https://images.unsplash.com/photo-1505051508008-923feaf90180?w=800"},
-            "Coast": {"en": "Atlantic Breeze", "ar": "نسيم المحيط", "img": "https://images.unsplash.com/photo-1539129790410-d0124747b290?w=800"}
+            "North": {"en": {"title": "The Mediterranean Soul", "desc": "A dream of blue and white.", "highlights": "• Chefchaouen • Tangier • Akchour"}, "ar": {"title": "روح المتوسط (الشمال)", "desc": "حلم من الأزرق والأبيض.", "highlights": "• شفشاون • طنجة • أقشور"}, "img": "https://images.unsplash.com/photo-1548013146-72479768bbaa?w=800"},
+            "Center": {"en": {"title": "The Spiritual Heartland (Fes & Sefrou)", "desc": "The cradle of history.", "highlights": "• Fes • Sefrou Falls • Maison Balkiss"}, "ar": {"title": "القلب الروحاني (فاس وصفرو)", "desc": "مهد التاريخ.", "highlights": "• فاس • شلالات صفرو • ميزون بلقيس"}, "img": "https://images.unsplash.com/photo-1549944850-84e00be4203b?w=800"},
+            "South": {"en": {"title": "The Red Oasis (Marrakech)", "desc": "Vibrant souks.", "highlights": "• Jemaa el-Fnaa • Atlas Mountains"}, "ar": {"title": "واحة البهجة (مراكش)", "desc": "الأسواق النابضة.", "highlights": "• جامع الفناء • جبال الأطلس"}, "img": "https://images.unsplash.com/photo-1597212618440-806262de496b?w=800"},
+            "Desert": {"en": {"title": "The Golden Sahara", "desc": "Golden dunes.", "highlights": "• Erg Chebbi • Camel Trekking"}, "ar": {"title": "الصحراء الذهبية", "desc": "كثبان رملية ذهبية.", "highlights": "• عرق الشبي • رحلات الجمال"}, "img": "https://images.unsplash.com/photo-1505051508008-923feaf90180?w=800"},
+            "Coast": {"en": {"title": "The Atlantic Breeze", "desc": "The artistic wind city.", "highlights": "• Essaouira • Agadir • Dakhla"}, "ar": {"title": "نسيم المحيط (الساحل)", "desc": "مدينة الرياح والفنون.", "highlights": "• الصويرة • أكادير • الداخلة"}, "img": "https://images.unsplash.com/photo-1539129790410-d0124747b290?w=800"}
         }
+        
         cols = st.columns(5)
         if 'active_hub' not in st.session_state: st.session_state.active_hub = "Center"
         for i, k in enumerate(hubs_data.keys()):
-            if cols[i].button(hubs_data[k][('en' if lang == 'English' else 'ar')], key=f"h_{k}"):
-                st.session_state.active_hub = k
-        st.image(hubs_data[st.session_state.active_hub]['img'], use_container_width=True)
+            label = hubs_data[k]['en' if hub_lang == 'English' else 'ar']['title'].split('(')[0]
+            if cols[i].button(label, key=f"nav_{k}", use_container_width=True):
+                st.session_state.active_hub = k; st.rerun()
+        
+        sel = hubs_data[st.session_state.active_hub]
+        st.divider()
+        c1, c2 = st.columns([1.5, 1])
+        with c1: st.image(sel['img'], use_container_width=True)
+        with c2:
+            txt = sel['en' if hub_lang == 'English' else 'ar']
+            st.header(txt['title']); st.write(txt['desc']); st.info(txt['highlights'])
 
     with tab2:
         st.header(t['tab2'])
         if os.path.exists('landmarks_data.csv'):
             df_geo = pd.read_csv('landmarks_data.csv')
-            sel_city = st.selectbox("Select City", df_geo['City'].unique())
-            city_info = df_geo[df_geo['City'] == sel_city].iloc[0]
-            m = folium.Map(location=[city_info['Lat'], city_info['Lon']], zoom_start=12)
-            folium.Marker([city_info['Lat'], city_info['Lon']], popup=city_info['Place']).add_to(m)
-            st_folium(m, width=800, height=450, key="map")
+            c1, c2 = st.columns(2)
+            with c1: sel_reg = st.selectbox("📍 Region", [""] + sorted(df_geo['Region'].unique().tolist()), key="r_m")
+            with c2: 
+                cities = sorted(df_geo[df_geo['Region'] == sel_reg]['City'].unique().tolist()) if sel_reg else sorted(df_geo['City'].unique().tolist())
+                sel_city = st.selectbox("🏙️ City", [""] + cities, key="c_m")
+            if sel_city:
+                city_info = df_geo[df_geo['City'] == sel_city].iloc[0]
+                st.success(city_info['Description'])
+                m = folium.Map(location=[city_info['Lat'], city_info['Lon']], zoom_start=12)
+                folium.Marker([city_info['Lat'], city_info['Lon']], popup=city_info['Place']).add_to(m)
+                st_folium(m, width=800, height=450, key="map")
 
     with tab3:
-        # --- حلينا فضيحة صفرو والتكرار هنا ---
         st.header(t['tab3'])
-        
-        # كارت الجواز
         user_stamps = load_user_stamps(st.session_state.visitor_email)
+        # الجواز بالديكور الذهبي
         st.markdown(f"""
-            <div style="border: 3px double #D4AF37; padding: 20px; border-radius: 15px; background: #111; text-align: center;">
+            <div style="border: 3px double #D4AF37; padding: 25px; border-radius: 15px; background: #111; text-align: center;">
                 <h2 style="color: #D4AF37;">HERITAGE AMBASSADOR PASSPORT</h2>
-                <p style="color: white;">Holder: {st.session_state.visitor_name} | Stamps: {len(user_stamps)}</p>
+                <div style="display: flex; justify-content: space-around; margin-top: 20px;">
+                    <div><p style="color: #D4AF37; font-size: 12px;">HOLDER</p><h3 style="color: white;">{st.session_state.visitor_name}</h3></div>
+                    <div><p style="color: #D4AF37; font-size: 12px;">STAMPS</p><h3 style="color: white;">{len(user_stamps)} / 10</h3></div>
+                </div>
             </div>
         """, unsafe_allow_html=True)
 
         st.divider()
-        
-        # نظام تحديد الموقع الذكي: لا كود، لا صفرو مفروضة
-        st.subheader("📍 Verify Your Current Location")
+        # تصحيح اللوكايشن: زر واحد ذكي كيعرف المدينة بوحدو (بدون تكرار وبدون فرض صفرو)
         if st.button(t['gps_btn']):
-            loc = streamlit_js_eval(js_expressions="window.navigator.geolocation.getCurrentPosition(pos => { return pos.coords })", key="gps_p")
+            loc = streamlit_js_eval(js_expressions="window.navigator.geolocation.getCurrentPosition(pos => { return pos.coords })", key="p_gps")
             if loc:
-                u_lat, u_lon = loc['latitude'], loc['longitude']
-                # سؤل الخريطة عن اسم المدينة
                 try:
-                    res = requests.get(f"https://nominatim.openstreetmap.org/reverse?lat={u_lat}&lon={u_lon}&format=json", headers={'User-Agent': 'BalkissApp/1.0'}).json()
-                    current_city = res.get('address', {}).get('city') or res.get('address', {}).get('town') or "Morocco Landmark"
-                except: current_city = "Morocco Explorer"
-                
-                # إضافة الطابع بناءً على الموقع الفعلي
-                save_stamp_to_db(st.session_state.visitor_name, st.session_state.visitor_email, current_city)
-                st.success(f"Verified! Stamp for {current_city} added.")
-                st.balloons()
-                st.rerun()
+                    res = requests.get(f"https://nominatim.openstreetmap.org/reverse?lat={loc['latitude']}&lon={loc['longitude']}&format=json", headers={'User-Agent': 'BalkissApp/1.0'}).json()
+                    city_found = res.get('address', {}).get('city') or res.get('address', {}).get('town') or "Morocco Landmark"
+                except: city_found = "Morocco Explorer"
+                save_stamp_to_db(st.session_state.visitor_name, st.session_state.visitor_email, city_found)
+                st.success(f"Verified! Stamp for {city_found} added."); st.balloons(); st.rerun()
 
-        # عرض الطوابع الحقيقية فقط
+        # عرض الطوابع بالستايل القديم (بدون تكرار وهمي)
         st.subheader("🏺 Collected Stamps")
-        if user_stamps:
-            cols = st.columns(2)
-            for i, visit in enumerate(reversed(user_stamps)):
-                with cols[i % 2]:
-                    st.markdown(f'''
-                        <div style="background-color: #fdf5e6; padding: 10px; border: 2px dashed #b8860b; color: black; border-radius: 5px; margin-bottom: 10px;">
-                            <h4 style="margin:0;">📮 {visit['Place']}</h4>
-                            <p style="font-size: 11px; margin:0;"><b>DATE:</b> {visit['Date']}</p>
-                        </div>
-                    ''', unsafe_allow_html=True)
-        else: st.info("Passport empty. Verify location to get stamps.")
+        cols = st.columns(2)
+        for i, visit in enumerate(reversed(user_stamps)):
+            with cols[i % 2]:
+                st.markdown(f'''<div style="background-color: #fdf5e6; padding: 15px; border: 3px dashed #b8860b; color: black; margin-bottom: 10px;">
+                    <h3 style="margin:0; color: #333;">📮 {visit['Place']}</h3>
+                    <p style="font-size: 11px; color: #8b4513;">ROYAUME DU MAROC - HERITAGE</p>
+                    <p style="font-size: 12px; color: #000;"><b>DATE:</b> {visit['Date']}</p>
+                </div>''', unsafe_allow_html=True)
 
-st.markdown("<center>© 2026 MAISON BALKISS - Smart Tourism 4.0</center>", unsafe_allow_html=True)
+    # --- الخدمة ديال 15 دولار (بقات كيف ما هي!) ---
+    st.write("---")
+    st.subheader("🌟 Exclusive Eco-Travel Services")
+    with st.expander("Get your Personalized Green Itinerary (15€)"):
+        with st.form("p_f"):
+            c_n, c_e = st.text_input("Name"), st.text_input("Email")
+            if st.form_submit_button("Confirm & Pay via WhatsApp 💬"):
+                wa_url = f"https://wa.me/212667920412?text=I%20want%20the%20Itinerary%20for%20{c_n}"
+                st.markdown(f'<meta http-equiv="refresh" content="0;url={wa_url}">', unsafe_allow_html=True)
+
+    # --- الفيدباك ---
+    st.write("---")
+    st.subheader(t['feedback'])
+    user_msg = st.text_area("Feedback...", key="fa_unique")
+    if st.button("Submit"):
+        if save_feedback(st.session_state.visitor_name, st.session_state.visitor_email, user_msg):
+            st.success("Recorded!"); st.rerun()
+
+st.markdown("<center>© 2026 MAISON BALKISS</center>", unsafe_allow_html=True)
