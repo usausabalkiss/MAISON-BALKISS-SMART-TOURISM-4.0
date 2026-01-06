@@ -249,8 +249,8 @@ else:
                     folium.Marker([city_info['Lat'], city_info['Lon']], popup=city_info['Place']).add_to(m)
                     st_folium(m, width=900, height=450, key="map_"+sel_city)
 
-    with tab3:
-        st.header(f"📜 {t['tab3']}")
+        with tab3:
+             st.header(f"📜 {t['tab3']}")
         user_stamps = load_user_stamps(st.session_state.visitor_email)
         stamps_count = len(user_stamps)
         st.markdown(f"""
