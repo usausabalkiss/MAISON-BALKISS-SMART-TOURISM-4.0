@@ -304,28 +304,47 @@ with st.expander("Get your Personalized Green Itinerary (15€)"):
             else: st.warning("Please fill in your details.")
 
 # --- نظام تحديد الموقع الذكي للمغرب كامل ---
+# --- كود تحديد الموقع بلونكلي وعربية (حطيه لتحت كاع) ---
 st.write("---")
-st.header("🛂 توثيق الموقع الذكي")
 
-# هاد السطر هو اللي كيطلب الإذن من تليفون السائح باش يعرف فين كاين
-loc_data = streamlit_js_eval(js_expressions="window.navigator.geolocation.getCurrentPosition(pos => { return pos.coords })", key="smart_gps_tracker")
-
-if loc_data:
-    u_lat = loc_data['latitude']
-    u_lon = loc_data['longitude']
-    
-    st.success(f"📍 تم رصد موقعك الحالي: ({u_lat:.4f}, {u_lon:.4f})")
-    
-    # دابا كنشوفو واش السائح فالمغرب (الحدود الجغرافية للمغرب)
-    if 21 <= u_lat <= 36 and -17 <= u_lon <= -1:
-        st.balloons()
-        st.success("🇲🇦 تم التأكد! أنت متواجد في تراب المملكة المغربية.")
-        if st.button("احصل على طابع الرحالة المغربي 📮"):
-            # هاد السطر كيسجل الطابع فالحساب ديالو
-            save_stamp_to_db(st.session_state.visitor_name, st.session_state.visitor_email, "المغرب")
-            st.info("تم إضافة الطابع لجواز سفرك!")
-    else:
-        st.error("عذراً، يجب أن تكون داخل المغرب بصح باش تاخد هاد الطابع.")
+# 1. تحديد النصوص على حساب اللغة اللي اختار السائح
+if st.session_state.get('language') == 'English':
+    gps_header = "📍 Smart Location Verification"
+    gps_info = "Click below to verify you are in Morocco and get your stamp!"
+    gps_btn = "🛰️ Verify My Location"
+    gps_success = "📍 Location Detected: "
+    gps_morocco = "🇲🇦 Confirmed! You are in Morocco. Stamp added!"
+    gps_error = "Access Denied: You are outside Morocco."
+    gps_wait = "Please allow location access in your browser."
 else:
-    st.warning("المرجو الضغط على 'Allow/سماح' في تليفونك باش السيت يعرف فين نتا.")
+    gps_header = "📍 توثيق الموقع الذكي"
+    gps_info = "اضغط أدناه للتأكد من تواجدك في المغرب والحصول على الطابع!"
+    gps_btn = "🛰️ ابحث عن موقعي الآن"
+    gps_success = "📍 تم رصد موقعك: "
+    gps_morocco = "🇲🇦 تم التأكد! أنت في المغرب. تم إضافة الطابع!"
+    gps_error = "عذراً، أنت خارج النطاق الجغرافي للمغرب."
+    gps_wait = "المرجو السماح بالوصول للموقع في المتصفح."
+
+st.header(gps_header)
+st.info(gps_info)
+
+# 2. هاد المرة غانديرو الزر هو الأول
+if st.button(gps_btn):
+    # نعيطو للـ GPS مباشرة
+    location = streamlit_js_eval(js_expressions="window.navigator.geolocation.getCurrentPosition(pos => { return pos.coords })", key="final_gps")
+    
+    if location:
+        lat, lon = location['latitude'], location['longitude']
+        st.success(f"{gps_success} ({lat:.4f}, {lon:.4f})")
+        
+        # التأكد واش فالمغرب
+        if 21 <= lat <= 36 and -17 <= lon <= -1:
+            st.balloons()
+            st.success(gps_morocco)
+            # حفظ الطابع (تأكدي أن هاد الدالة كاينة عندك)
+            save_stamp_to_db(st.session_state.visitor_name, st.session_state.visitor_email, "Morocco Explorer")
+        else:
+            st.error(gps_error)
+    else:
+        st.warning(gps_wait)
 st.markdown("<center>© 2026 MAISON BALKISS - Smart Tourism 4.0</center>", unsafe_allow_html=True)
