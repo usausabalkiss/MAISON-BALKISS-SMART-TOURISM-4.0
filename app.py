@@ -171,28 +171,40 @@ else:
 
             st.write("---")
             
-            # 2. اللوكايشن - الطريقة اللي غاتخليها تخدم 100%
+            # 2. اللوكايشن والبحث التلقائي - هاد الجزء هو اللي زدت فيه "البحث اليدوي"
             st.subheader("📍 Verify Your Visit")
+            
+            # خيار البحث اليدوي (باش السائح ما يحصلش إيلا الـ GPS تعطل)
+            cities_list = ["Fez", "Marrakech", "Chefchaouen", "Tanger", "Casablanca", "Rabat", "Essaouira", "Agadir", "Meknes", "Ouarzazate", "Ifrane", "Merzouga"]
+            selected_city = st.selectbox("Search your current city | ابحث عن مدينتك الحالية", ["--- Select City ---"] + cities_list)
+            
+            st.write("OR") # أو جرب اللوكايشن
             
             # كنطلبوا الموقع بمجرد فتح التاب باش يكون واجد
             current_loc = streamlit_js_eval(js_expressions="window.navigator.geolocation.getCurrentPosition(pos => { return pos.coords })", key="gps_ready")
 
             if st.button("🛰️ Claim Local Heritage Stamp"):
-                if current_loc:
+                # الخيار 1: إيلا السائح اختار المدينة بيدو
+                if selected_city != "--- Select City ---":
+                    save_stamp_to_db(st.session_state.visitor_name, st.session_state.visitor_email, selected_city)
+                    st.success(f"Stamp for {selected_city} added!")
+                    st.balloons()
+                    st.rerun()
+                
+                # الخيار 2: إيلا السائح بغا يخدم بالـ GPS
+                elif current_loc:
                     try:
-                        # طلب اسم المدينة بناءً على الإحداثيات
                         res = requests.get(f"https://nominatim.openstreetmap.org/reverse?lat={current_loc['latitude']}&lon={current_loc['longitude']}&format=json", headers={'User-Agent': 'BalkissApp/1.0'}).json()
                         city_name = res.get('address', {}).get('city') or res.get('address', {}).get('town') or res.get('address', {}).get('village') or "Morocco Landmark"
                         
                         save_stamp_to_db(st.session_state.visitor_name, st.session_state.visitor_email, city_name)
-                        st.success(f"Stamp for {city_name} added!")
+                        st.success(f"Verified by GPS! Stamp for {city_name} added.")
                         st.balloons()
                         st.rerun()
                     except:
-                        st.error("Connection error. Please try again.")
+                        st.error("GPS error. Please select city manually from the list above.")
                 else:
-                    # إيلا الموقع مازال ماباش، كنبهوا السائح يتسنى ثانية ويبرك عاوتاني
-                    st.warning("Locating... Please wait a second for GPS to respond and click again! 🛰️")
+                    st.warning("Please select a city from the list or wait for GPS to respond!")
 
             st.write("---")
             
