@@ -134,103 +134,87 @@ if not st.session_state.logged_in:
 
 # 6. الواجهة الرئيسية
 else:
+        # العنوان الرئيسي والترحيب مورا العلامة التجارية
         st.title(f"👑 {t['welcome']}")
         st.subheader(t['subtitle'])
-        # تعريف التابات بناءً على القاموس t
+        
+        # تعريف الـ 3 تابات اللي عندك فقط
         tab1, tab2, tab3 = st.tabs([t['tab1'], t['tab2'], t['tab3']])
 
+        # --- بداية Tab 1: رحلة عبر أقطاب المغرب ---
         with tab1:
-            # --- 1. إعداد نظام اللغة ---
-            st.markdown("### 🌍 Language / اللغة")
-            # أضفت key فريد للراديو لتجنب أي تداخل تقني
-            lang_choice = st.radio("Choose language:", ("English", "العربية"), horizontal=True, key="lang_toggle")
+            # نظام اختيار اللغة داخل التاب
+            lang = st.radio("🌐 Choose Language / اختر اللغة", ("English", "العربية"), horizontal=True, key="lang_selector")
             
-            hubs = {
+            # قاعدة بيانات الأقطاب (وصف غني وشامل وصور حقيقية)
+            hubs_data = {
                 "North": {
-                    "title_en": "The Mediterranean Soul (North)",
-                    "title_ar": "روح المتوسط (الشمال)",
-                    "desc_en": "Where the blue of Chefchaouen meets the history of Tangier.",
-                    "desc_ar": "حيث تلتقي زرقة شفشاون بتاريخ طنجة العريق.",
-                    "img": "https://images.unsplash.com/photo-1548013146-72479768bbaa?w=1000",
-                    "highlights_en": "• Chefchaouen • Tangier • Tetouan",
-                    "highlights_ar": "• شفشاون • طنجة • تطوان"
+                    "en": {"title": "The Mediterranean Soul (North)", "desc": "A dream of blue and white where the Rif mountains meet the sea. Experience the Andalusian heritage of Tetouan and the international vibe of Tangier.", "highlights": "• Blue City (Chefchaouen) • Tangier Kasbah • Akchour Waterfalls"},
+                    "ar": {"title": "روح المتوسط (الشمال)", "desc": "حلم من الأزرق والأبيض، حيث تعانق جبال الريف مياه المتوسط. استكشف الإرث الأندلسي بتطوان ونبض طنجة العالمي.", "highlights": "• الجوهرة الزرقاء (شفشاون) • قصبة طنجة • شلالات أقشور"},
+                    "img": "https://images.unsplash.com/photo-1548013146-72479768bbaa?w=1000"
                 },
                 "Center": {
-                    "title_en": "The Spiritual Heartland (Imperial Cities)",
-                    "title_ar": "القلب النابض (المدن الإمبراطورية)",
-                    "desc_en": "The cradle of history, Fes and the cherry waterfalls of Sefrou.",
-                    "desc_ar": "مهد التاريخ والحضارة، فاس وشلالات صفرو الجميلة.",
-                    "img": "https://images.unsplash.com/photo-1549944850-84e00be4203b?w=1000",
-                    "highlights_en": "• Fes • Sefrou & Maison Balkiss • Meknes",
-                    "highlights_ar": "• فاس • صفرو وميزون بلقيس • مكناس"
+                    "en": {"title": "The Spiritual Heartland (Fes & Sefrou)", "desc": "The cradle of Moroccan civilization. From the 9,000 alleys of Fes to the cherry orchards of Sefrou. Your stay at Maison Balkiss is the heart of this journey.", "highlights": "• Fes Medina • Sefrou Falls & Maison Balkiss • Roman Volubilis"},
+                    "ar": {"title": "القلب الروحاني (فاس وصفرو)", "desc": "مهد الحضارة المغربية. من أزقة فاس التسعة آلاف إلى بساتين الكرز في صفرو. إقامتك في ميزون بلقيس هي جوهر هذه الرحلة.", "highlights": "• مدينة فاس العتيقة • شلالات صفرو وميزون بلقيس • وليلي الأثرية"},
+                    "img": "https://images.unsplash.com/photo-1549944850-84e00be4203b?w=1000"
                 },
                 "South": {
-                    "title_en": "The Red Oasis (Marrakech & Atlas)",
-                    "title_ar": "واحة البهجة (مراكش والأطلس)",
-                    "desc_en": "The vibrant heart of Morocco and majestic Atlas peaks.",
-                    "desc_ar": "قلب المغرب النابض وقمم الأطلس الشامخة.",
-                    "img": "https://images.unsplash.com/photo-1597212618440-806262de496b?w=1000",
-                    "highlights_en": "• Marrakech • Imlil • Ouarzazate",
-                    "highlights_ar": "• مراكش • إمليل • ورزازات"
+                    "en": {"title": "The Red Oasis (Marrakech & Atlas)", "desc": "Vibrant markets, the majestic High Atlas peaks, and the cinematic landscapes of Ouarzazate. A world of red clay and green palms.", "highlights": "• Jemaa el-Fnaa • Toubkal National Park • Ait Ben Haddou"},
+                    "ar": {"title": "واحة البهجة (مراكش والأطلس)", "desc": "الأسواق النابضة، قمم الأطلس الكبير الشامخة، والمناظر السينمائية في ورزازات. عالم من الطين الأحمر والنخيل الأخضر.", "highlights": "• ساحة جامع الفناء • جبل توبقال • قصر آيت بن حدو"},
+                    "img": "https://images.unsplash.com/photo-1597212618440-806262de496b?w=1000"
                 },
                 "Desert": {
-                    "title_en": "The Golden Sahara (Sand & Stars)",
-                    "title_ar": "الصحراء الذهبية (الرمال والنجوم)",
-                    "desc_en": "Golden dunes and nights under a sky full of stars.",
-                    "desc_ar": "كثبان رملية ذهبية وليالٍ تحت سماء مرصعة بالنجوم.",
-                    "img": "https://images.unsplash.com/photo-1505051508008-923feaf90180?w=1000",
-                    "highlights_en": "• Merzouga • Draa Valley",
-                    "highlights_ar": "• مرزوكة • وادي درعة"
+                    "en": {"title": "The Golden Sahara", "desc": "Silence, magic, and endless dunes. Ride camels at sunset and sleep under a billion stars in Merzouga.", "highlights": "• Erg Chebbi Dunes • Camel Trekking • Star Gazing"},
+                    "ar": {"title": "الصحراء الذهبية", "desc": "الهدوء، السحر، وكثبان رملية لا تنتهي. اركب الجمال عند الغروب ونم تحت غطاء من مليار نجمة في مرزوكة.", "highlights": "• عرق الشبي • رحلات الجمال • رصد النجوم"},
+                    "img": "https://images.unsplash.com/photo-1505051508008-923feaf90180?w=1000"
                 },
                 "Coast": {
-                    "title_en": "The Atlantic Breeze (Ocean & Sports)",
-                    "title_ar": "نسيم المحيط (الساحل والرياضة)",
-                    "desc_en": "Endless beaches and surfing paradises like Essaouira.",
-                    "desc_ar": "شواطئ لا متناهية وجنة لراكبي الأمواج كالصويرة.",
-                    "img": "https://images.unsplash.com/photo-1539129790410-d0124747b290?w=1000",
-                    "highlights_en": "• Essaouira • Agadir • Dakhla",
-                    "highlights_ar": "• الصويرة • أكادير • الداخلة"
+                    "en": {"title": "The Atlantic Breeze", "desc": "From the artistic wind city of Essaouira to the surfing paradise of Dakhla. Pure ocean energy and fresh seafood.", "highlights": "• Essaouira Mogador • Agadir Bay • Dakhla Kitesurfing"},
+                    "ar": {"title": "نسيم المحيط (الساحل)", "desc": "من مدينة الرياح والفنون الصويرة إلى جنة ركوب الأمواج بالداخلة. طاقة المحيط الصافية وأشهى المأكولات البحرية.", "highlights": "• صويرة موغادور • خليج أكادير • الداخلة"},
+                    "img": "https://images.unsplash.com/photo-1539129790410-d0124747b290?w=1000"
                 }
             }
 
-            st.divider()
-            title_text = "🗺️ Explore Morocco's Tourism Hubs" if lang_choice == "English" else "🗺️ اكتشف أقطاب السياحة المغربية"
-            st.header(title_text)
+            st.write("---")
+            st.markdown(f"### {'📍 Explore Morocco by Region' if lang == 'English' else '📍 اكتشف مناطق المغرب'}")
             
+            # أزرار الأقطاب واضحة وسهلة الاستعمال
             cols = st.columns(5)
-            # التأكد من وجود الحالة في session_state
-            if 'selected_hub' not in st.session_state:
-                st.session_state.selected_hub = 'Center'
+            if 'active_hub' not in st.session_state:
+                st.session_state.active_hub = "Center"
 
-            hub_keys = list(hubs.keys())
-            for i, key in enumerate(hub_keys):
-                btn_label = hubs[key]['title_en'].split('(')[0] if lang_choice == "English" else hubs[key]['title_ar'].split('(')[0]
-                if cols[i].button(btn_label, key=f"btn_{key}"):
-                    st.session_state.selected_hub = key
+            for i, k in enumerate(hubs_data.keys()):
+                label = hubs_data[k]['en']['title'].split('(')[0] if lang == "English" else hubs_data[k]['ar']['title'].split('(')[0]
+                if cols[i].button(label, key=f"btn_h_{k}", use_container_width=True):
+                    st.session_state.active_hub = k
 
+            # عرض القطب المختار (صور ووصف شامل)
+            selected = hubs_data[st.session_state.active_hub]
             st.markdown("---")
-            current_hub = hubs[st.session_state.selected_hub]
+            c_left, c_right = st.columns([1.5, 1])
             
-            col_img, col_info = st.columns([1.2, 1])
-            with col_img:
-                st.image(current_hub['img'], use_container_width=True)
+            with c_left:
+                st.image(selected['img'], use_container_width=True)
             
-            with col_info:
-                if lang_choice == "English":
-                    st.subheader(current_hub['title_en'])
-                    st.write(current_hub['desc_en'])
-                    st.info(f"📍 **Key Highlights:**\n\n{current_hub['highlights_en']}")
-                else:
-                    st.subheader(current_hub['title_ar'])
-                    st.write(current_hub['desc_ar'])
-                    st.info(f"📍 **أهم المعالم:**\n\n{current_hub['highlights_ar']}")
-            
-            st.divider()
-            search_label = "🔍 Search for a city:" if lang_choice == "English" else "🔍 ابحث عن مدينة:"
-            search_query = st.text_input(search_label, key="city_search")
-            if search_query:
-                st.success(f"✨ '{search_query}' is a gem!" if lang_choice == "English" else f"✨ '{search_query}' جوهرة مغربية!")
+            with c_right:
+                txt = selected['en'] if lang == "English" else selected['ar']
+                st.subheader(txt['title'])
+                st.write(txt['desc'])
+                st.info(f"📍 **{'Highlights' if lang == 'English' else 'أهم المعالم'}:**\n{txt['highlights']}")
+                
+                if st.session_state.active_hub == "Center":
+                    st.success("🏠 **Maison Balkiss** " + ("is the heart of this region!" if lang == "English" else "هي قلب هذه المنطقة!"))
 
+        # --- Tab 2: اكتشف المزيد (Discover) ---
+        with tab2:
+            st.header(t['tab2'])
+            st.write("Additional tourism content and maps can go here." if lang == "English" else "يمكن إضافة محتوى سياحي إضافي وخرائط هنا.")
+
+        # --- Tab 3: تجربة الزائر (Feedback & AI) ---
+        with tab3:
+            st.header(t['tab3'])
+            # ضعي هنا كود الشات أو الـ Feedback الخاص بك
+            st.write("Share your experience or ask our AI guide!" if lang == "English" else "شاركنا تجربتك أو اسأل مرشدنا الذكي!")
             with tab2:
                  st.write("Tab 2 content here...")
         if os.path.exists('landmarks_data.csv'):
