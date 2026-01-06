@@ -150,45 +150,69 @@ else:
                 st_folium(m, width=800, height=450, key="map")
 
     with tab3:
-        st.header(t['tab3'])
-        user_stamps = load_user_stamps(st.session_state.visitor_email)
-        # الجواز بالديكور الذهبي
-        st.markdown(f"""
-            <div style="border: 3px double #D4AF37; padding: 25px; border-radius: 15px; background: #111; text-align: center;">
-                <h2 style="color: #D4AF37;">HERITAGE AMBASSADOR PASSPORT</h2>
-                <div style="display: flex; justify-content: space-around;">
-                    <div><p style="color: #D4AF37; font-size: 12px;">HOLDER</p><h3 style="color: white;">{st.session_state.visitor_name}</h3></div>
-                    <div><p style="color: #D4AF37; font-size: 12px;">STAMPS</p><h3 style="color: white;">{len(user_stamps)} / 10</h3></div>
+            st.header(t['tab3'])
+            user_stamps = load_user_stamps(st.session_state.visitor_email)
+            stamps_count = len(user_stamps)
+            
+            # 1. باسبور الأمباسادور (Ambassador Passport) - ما تقاسش
+            st.markdown(f"""
+                <div style="border: 3px double #D4AF37; padding: 25px; border-radius: 15px; background: linear-gradient(145deg, #111, #000); text-align: center;">
+                    <h2 style="color: #D4AF37; margin-bottom: 5px;">HERITAGE AMBASSADOR PASSPORT</h2>
+                    <div style="display: flex; justify-content: space-around; margin-top: 20px;">
+                        <div><p style="color: #D4AF37; font-size: 12px;">HOLDER</p><h3 style="color: white;">{st.session_state.visitor_name}</h3></div>
+                        <div><p style="color: #D4AF37; font-size: 12px;">STAMPS</p><h3 style="color: white;">{stamps_count} / 10</h3></div>
+                    </div>
                 </div>
-            </div>
-        """, unsafe_allow_html=True)
+            """, unsafe_allow_html=True)
+            
+            # شريط التقدم لـ 10 زيارات
+            st.progress(min(stamps_count / 10, 1.0))
+            if stamps_count >= 10:
+                st.success("🎖️ Congratulations! You are now a Gold Heritage Ambassador!")
 
-        st.divider()
-        # تصحيح اللوكايشن: زر ذكي كيعرف السائح فين كاين بلا ما يفرض عليه صفرو
-        if st.button(t['gps_btn']):
-            loc_eval = streamlit_js_eval(js_expressions="window.navigator.geolocation.getCurrentPosition(pos => { return pos.coords })", key="p_gps")
-            if loc_eval:
-                try:
-                    res = requests.get(f"https://nominatim.openstreetmap.org/reverse?lat={loc_eval['latitude']}&lon={loc_eval['longitude']}&format=json", headers={'User-Agent': 'BalkissApp/1.0'}).json()
-                    city_found = res.get('address', {}).get('city') or res.get('address', {}).get('town') or "Morocco Landmark"
-                except: city_found = "Morocco Explorer"
-                save_stamp_to_db(st.session_state.visitor_name, st.session_state.visitor_email, city_found)
-                st.success(f"Verified! Stamp for {city_found} added."); st.balloons(); st.rerun()
+            st.write("---")
+            
+            # 2. الزر الذكي (اللوكايشن) - اللي كيخدم للمغرب كامل
+            st.subheader("📍 Verify Your Visit")
+            if st.button("🛰️ Claim Local Heritage Stamp"):
+                loc = streamlit_js_eval(js_expressions="window.navigator.geolocation.getCurrentPosition(pos => { return pos.coords })", key="p_gps_check")
+                if loc:
+                    try:
+                        res = requests.get(f"https://nominatim.openstreetmap.org/reverse?lat={loc['latitude']}&lon={loc['longitude']}&format=json", headers={'User-Agent': 'BalkissApp/1.0'}).json()
+                        city_name = res.get('address', {}).get('city') or res.get('address', {}).get('town') or "Morocco Landmark"
+                    except:
+                        city_name = "Morocco Explorer"
+                    
+                    save_stamp_to_db(st.session_state.visitor_name, st.session_state.visitor_email, city_name)
+                    st.success(f"Stamp for {city_name} added!")
+                    st.rerun()
 
-        # عرض الطوابع الحقيقية فقط (حيدنا الفضيحة ديال تكرار 1234)
-        st.subheader("🏺 Your Collected Stamps")
-        if user_stamps:
+            st.write("---")
+            
+            # 3. الطابع البريدي بالكاشي ديال الماركة (Maison Balkiss Official) - بـ 10 دراهم
+            st.subheader("🏺 Your Digital Collection")
             cols = st.columns(2)
             for i, visit in enumerate(reversed(user_stamps)):
                 with cols[i % 2]:
-                    st.markdown(f'''<div style="background-color: #fdf5e6; padding: 15px; border: 3px dashed #b8860b; border-radius: 5px; color: black; margin-bottom: 10px; min-height: 150px;">
-                        <h3 style="margin:0; color: #333;">📮 {visit['Place']}</h3>
-                        <p style="font-size: 10px; color: #8b4513;">ROYAUME DU MAROC - HERITAGE</p>
-                        <hr style="border-top: 1px solid #d2b48c; margin: 10px 0;">
-                        <p style="font-size: 12px; color: #000;"><b>DATE:</b> {visit['Date']}</p>
-                    </div>''', unsafe_allow_html=True)
-        else: st.info("Collect your first stamp to see it here!")
-
+                    st.markdown(f'''
+                        <div style="background-color: #fdf5e6; padding: 15px; border: 3px dashed #b8860b; border-radius: 2px; margin-bottom: 20px; position: relative; box-shadow: 5px 5px 15px rgba(0,0,0,0.3); font-family: 'Courier New', Courier, monospace; min-height: 180px;">
+                            <div style="border: 1px solid #d2b48c; padding: 10px;">
+                                <span style="float: right; color: #b8860b; font-weight: bold; font-size: 18px;">10<br><small>DH</small></span>
+                                <h3 style="margin:0; color: #333; text-transform: uppercase;">{visit['Place']}</h3>
+                                <p style="font-size: 10px; color: #8b4513; margin: 5px 0; font-weight: bold;">ROYAUME DU MAROC - HERITAGE</p>
+                                <hr style="border-top: 1px solid #d2b48c; margin: 10px 0;">
+                                <p style="font-size: 13px; color: #000; margin: 5px 0;"><b>HOLDER:</b> {visit['Name']}</p>
+                                <p style="font-size: 11px; color: #000; margin: 0;"><b>DATE:</b> {visit['Date']}</p>
+                            </div>
+                            <div style="position: absolute; bottom: 10px; right: 10px; width: 85px; height: 85px; border: 4px double rgba(139, 0, 0, 0.7); border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; transform: rotate(-15deg); background: rgba(255, 255, 255, 0.1);">
+                                <div style="border: 1px solid rgba(139, 0, 0, 0.4); border-radius: 50%; width: 70px; height: 70px; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.1;">
+                                    <span style="font-size: 6px; color: rgba(139, 0, 0, 0.7); font-weight: bold; margin-bottom: 2px;">★ ★ ★</span>
+                                    <span style="font-size: 10px; color: rgba(139, 0, 0, 0.8); font-weight: 900; text-align: center;">MAISON<br>BALKISS</span>
+                                    <span style="font-size: 6px; color: rgba(139, 0, 0, 0.7); font-weight: bold; margin-top: 2px;">OFFICIAL</span>
+                                </div>
+                            </div>
+                        </div>
+                    ''', unsafe_allow_html=True)
     # --- الخدمة ديال 15 دولار (بقات كيف ما هي) ---
     st.write("---")
     st.subheader("🌟 Exclusive Eco-Travel Services")
