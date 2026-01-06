@@ -1,4 +1,4 @@
-
+from streamlit_js_eval import streamlit_js_eval
 import streamlit as st
 import pandas as pd
 import os
@@ -303,4 +303,29 @@ with st.expander("Get your Personalized Green Itinerary (15€)"):
                 st.markdown(f'<meta http-equiv="refresh" content="0;url={wa_url}">', unsafe_allow_html=True)
             else: st.warning("Please fill in your details.")
 
+# --- نظام تحديد الموقع الذكي للمغرب كامل ---
+st.write("---")
+st.header("🛂 توثيق الموقع الذكي")
+
+# هاد السطر هو اللي كيطلب الإذن من تليفون السائح باش يعرف فين كاين
+loc_data = streamlit_js_eval(js_expressions="window.navigator.geolocation.getCurrentPosition(pos => { return pos.coords })", key="smart_gps_tracker")
+
+if loc_data:
+    u_lat = loc_data['latitude']
+    u_lon = loc_data['longitude']
+    
+    st.success(f"📍 تم رصد موقعك الحالي: ({u_lat:.4f}, {u_lon:.4f})")
+    
+    # دابا كنشوفو واش السائح فالمغرب (الحدود الجغرافية للمغرب)
+    if 21 <= u_lat <= 36 and -17 <= u_lon <= -1:
+        st.balloons()
+        st.success("🇲🇦 تم التأكد! أنت متواجد في تراب المملكة المغربية.")
+        if st.button("احصل على طابع الرحالة المغربي 📮"):
+            # هاد السطر كيسجل الطابع فالحساب ديالو
+            save_stamp_to_db(st.session_state.visitor_name, st.session_state.visitor_email, "المغرب")
+            st.info("تم إضافة الطابع لجواز سفرك!")
+    else:
+        st.error("عذراً، يجب أن تكون داخل المغرب بصح باش تاخد هاد الطابع.")
+else:
+    st.warning("المرجو الضغط على 'Allow/سماح' في تليفونك باش السيت يعرف فين نتا.")
 st.markdown("<center>© 2026 MAISON BALKISS - Smart Tourism 4.0</center>", unsafe_allow_html=True)
