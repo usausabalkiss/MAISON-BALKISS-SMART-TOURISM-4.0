@@ -154,7 +154,7 @@ else:
             user_stamps = load_user_stamps(st.session_state.visitor_email)
             stamps_count = len(user_stamps)
             
-            # 1. باسبور الأمباسادور (Ambassador Passport) - ما تقاسش
+            # 1. باسبور الأمباسادور (Ambassador Passport) - الديكور ديالك
             st.markdown(f"""
                 <div style="border: 3px double #D4AF37; padding: 25px; border-radius: 15px; background: linear-gradient(145deg, #111, #000); text-align: center;">
                     <h2 style="color: #D4AF37; margin-bottom: 5px;">HERITAGE AMBASSADOR PASSPORT</h2>
@@ -165,27 +165,34 @@ else:
                 </div>
             """, unsafe_allow_html=True)
             
-            # شريط التقدم لـ 10 زيارات
             st.progress(min(stamps_count / 10, 1.0))
             if stamps_count >= 10:
                 st.success("🎖️ Congratulations! You are now a Gold Heritage Ambassador!")
 
             st.write("---")
             
-            # 2. الزر الذكي (اللوكايشن) - اللي كيخدم للمغرب كامل
+            # 2. اللوكايشن - الطريقة اللي غاتخليها تخدم 100%
             st.subheader("📍 Verify Your Visit")
+            
+            # كنطلبوا الموقع بمجرد فتح التاب باش يكون واجد
+            current_loc = streamlit_js_eval(js_expressions="window.navigator.geolocation.getCurrentPosition(pos => { return pos.coords })", key="gps_ready")
+
             if st.button("🛰️ Claim Local Heritage Stamp"):
-                loc = streamlit_js_eval(js_expressions="window.navigator.geolocation.getCurrentPosition(pos => { return pos.coords })", key="p_gps_check")
-                if loc:
+                if current_loc:
                     try:
-                        res = requests.get(f"https://nominatim.openstreetmap.org/reverse?lat={loc['latitude']}&lon={loc['longitude']}&format=json", headers={'User-Agent': 'BalkissApp/1.0'}).json()
-                        city_name = res.get('address', {}).get('city') or res.get('address', {}).get('town') or "Morocco Landmark"
+                        # طلب اسم المدينة بناءً على الإحداثيات
+                        res = requests.get(f"https://nominatim.openstreetmap.org/reverse?lat={current_loc['latitude']}&lon={current_loc['longitude']}&format=json", headers={'User-Agent': 'BalkissApp/1.0'}).json()
+                        city_name = res.get('address', {}).get('city') or res.get('address', {}).get('town') or res.get('address', {}).get('village') or "Morocco Landmark"
+                        
+                        save_stamp_to_db(st.session_state.visitor_name, st.session_state.visitor_email, city_name)
+                        st.success(f"Stamp for {city_name} added!")
+                        st.balloons()
+                        st.rerun()
                     except:
-                        city_name = "Morocco Explorer"
-                    
-                    save_stamp_to_db(st.session_state.visitor_name, st.session_state.visitor_email, city_name)
-                    st.success(f"Stamp for {city_name} added!")
-                    st.rerun()
+                        st.error("Connection error. Please try again.")
+                else:
+                    # إيلا الموقع مازال ماباش، كنبهوا السائح يتسنى ثانية ويبرك عاوتاني
+                    st.warning("Locating... Please wait a second for GPS to respond and click again! 🛰️")
 
             st.write("---")
             
