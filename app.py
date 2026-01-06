@@ -140,40 +140,56 @@ else:
         tab1, tab2, tab3 = st.tabs([t['tab1'], t['tab2'], t['tab3']])
 
         with tab1:
-            # نظام اختيار اللغة
+            # --- هاد الجزء هو اللي كيحيد الصفورية الباهتة ويخلي الأزرار واضحة ---
+            st.markdown("""
+                <style>
+                div.stButton > button {
+                    background-color: #D4AF37 !important; /* لون ذهبي ملكي واضح */
+                    color: black !important;             /* كتابة سوداء واضحة */
+                    font-weight: bold !important;        /* كتابة غليظة */
+                    border: none !important;
+                    opacity: 1 !important;               /* كيحيد الضبابة */
+                }
+                div.stButton > button:hover {
+                    background-color: #B8860B !important; /* لون ذهبي أغمق شوية عند اللمس */
+                    color: white !important;
+                }
+                </style>
+            """, unsafe_allow_html=True)
+
+            # نظام اختيار اللغة (كودك الأصلي)
             lang = st.radio("🌐 Language / اللغة", ("English", "العربية"), horizontal=True, key="lang_v3")
             
-            # قاعدة بيانات الأقطاب مع روابط صور جديدة ومضمونة
+            # قاعدة بيانات الأقطاب (كودك الأصلي)
             hubs_data = {
                 "North": {
                     "en": {"title": "The Mediterranean Soul", "desc": "A dream of blue and white. Experience the Rif mountains and Tangier's history.", "highlights": "• Chefchaouen • Tangier • Akchour"},
                     "ar": {"title": "روح المتوسط (الشمال)", "desc": "حلم من الأزرق والأبيض. اكتشف جبال الريف وتاريخ طنجة.", "highlights": "• شفشاون • طنجة • أقشور"},
-                    "img": "https://images.unsplash.com/photo-1548013146-72479768bbaa?w=800" # صورة شفشاون حقيقية
+                    "img": "https://images.unsplash.com/photo-1548013146-72479768bbaa?w=800"
                 },
                 "Center": {
                     "en": {"title": "The Spiritual Heartland (Fes & Sefrou)", "desc": "The cradle of history. From Fes Medina to Maison Balkiss in Sefrou.", "highlights": "• Fes • Sefrou Falls • Maison Balkiss"},
                     "ar": {"title": "القلب الروحاني (فاس وصفرو)", "desc": "مهد التاريخ. من فاس العتيقة إلى ميزون بلقيس في صفرو.", "highlights": "• فاس • شلالات صفرو • ميزون بلقيس"},
-                    "img": "https://images.unsplash.com/photo-1549944850-84e00be4203b?w=800" # صورة فاس والزليج
+                    "img": "https://images.unsplash.com/photo-1549944850-84e00be4203b?w=800"
                 },
                 "South": {
                     "en": {"title": "The Red Oasis (Marrakech)", "desc": "Vibrant souks and the majestic High Atlas peaks.", "highlights": "• Jemaa el-Fnaa • Atlas Mountains • Ouarzazate"},
                     "ar": {"title": "واحة البهجة (مراكش)", "desc": "الأسواق النابضة وقمم الأطلس الكبير الشامخة.", "highlights": "• جامع الفناء • جبال الأطلس • ورزازات"},
-                    "img": "https://images.unsplash.com/photo-1597212618440-806262de496b?w=800" # صورة مراكش (الكتبية)
+                    "img": "https://images.unsplash.com/photo-1597212618440-806262de496b?w=800"
                 },
                 "Desert": {
                     "en": {"title": "The Golden Sahara", "desc": "Golden dunes and camel treks at sunset in Merzouga.", "highlights": "• Erg Chebbi • Camel Trekking • Star Gazing"},
                     "ar": {"title": "الصحراء الذهبية", "desc": "كثبان رملية ذهبية ورحلات الجمال عند الغروب في مرزوكة.", "highlights": "• عرق الشبي • رحلات الجمال • رصد النجوم"},
-                    "img": "https://images.unsplash.com/photo-1505051508008-923feaf90180?w=800" # صورة الجمل في الرمل
+                    "img": "https://images.unsplash.com/photo-1505051508008-923feaf90180?w=800"
                 },
                 "Coast": {
                     "en": {"title": "The Atlantic Breeze", "desc": "The artistic wind city of Essaouira and surfing in Dakhla.", "highlights": "• Essaouira • Agadir • Dakhla"},
                     "ar": {"title": "نسيم المحيط (الساحل)", "desc": "مدينة الرياح والفنون الصويرة وركوب الأمواج بالداخلة.", "highlights": "• الصويرة • أكادير • الداخلة"},
-                    "img": "https://images.unsplash.com/photo-1539129790410-d0124747b290?w=800" # صورة قوارب الصويرة الزرقاء
+                    "img": "https://images.unsplash.com/photo-1539129790410-d0124747b290?w=800"
                 }
             }
 
             st.divider()
-            # الأزرار دابا غاتغير الحالة فعلاً
             cols = st.columns(5)
             if 'active_hub' not in st.session_state:
                 st.session_state.active_hub = "Center"
@@ -182,9 +198,8 @@ else:
                 label = hubs_data[k]['en']['title'].split('(')[0] if lang == "English" else hubs_data[k]['ar']['title'].split('(')[0]
                 if cols[i].button(label, key=f"btn_nav_{k}", use_container_width=True):
                     st.session_state.active_hub = k
-                    st.rerun() # هاد السطر هو اللي كيخلي الصور تتبدل فالحين
+                    st.rerun()
 
-            # عرض المحتوى المختار
             selected = hubs_data[st.session_state.active_hub]
             st.markdown("---")
             c1, c2 = st.columns([1.5, 1])
