@@ -199,30 +199,36 @@ else:
                 st.info(f"📍 **{'Key Highlights' if lang == 'English' else 'أهم المعالم'}:**\n{txt['highlights']}")
         with tab2:
             st.header(t['tab2'])
-            st.write("Additional tourism content and maps can go here." if lang == "English" else "يمكن إضافة محتوى سياحي إضافي وخرائط هنا.")
-
-        # --- Tab 3: تجربة الزائر (Feedback & AI) ---
-        with tab3:
-            st.header(t['tab3'])
-            # ضعي هنا كود الشات أو الـ Feedback الخاص بك
-            st.write("Share your experience or ask our AI guide!" if lang == "English" else "شاركنا تجربتك أو اسأل مرشدنا الذكي!")
-            with tab2:
-                 st.write("Tab 2 content here...")
-        if os.path.exists('landmarks_data.csv'):
-            df_geo = pd.read_csv('landmarks_data.csv')
-            c1, c2 = st.columns(2)
-            with c1:
-                sel_reg = st.selectbox("📍 الجهة", [""] + sorted(df_geo['Region'].unique().tolist()))
-            if sel_reg:
+            
+            if os.path.exists('landmarks_data.csv'):
+                df_geo = pd.read_csv('landmarks_data.csv')
+                
+                # هاهما الجهات والمدن فسطر واحد باش يبانو ديما
+                c1, c2 = st.columns(2)
+                with c1:
+                    # اختيار الجهة (Region)
+                    sel_reg = st.selectbox("📍 الجهة / Region", [""] + sorted(df_geo['Region'].unique().tolist()), key="fix_reg")
+                
                 with c2:
-                    cities = sorted(df_geo[df_geo['Region'] == sel_reg]['City'].unique().tolist())
-                    sel_city = st.selectbox("🏙️ المدينة", [""] + cities)
+                    # اختيار المدينة (City) - غاتفلتر على حساب الجهة
+                    if sel_reg:
+                        cities = sorted(df_geo[df_geo['Region'] == sel_reg]['City'].unique().tolist())
+                    else:
+                        cities = sorted(df_geo['City'].unique().tolist())
+                    sel_city = st.selectbox("🏙️ المدينة / City", [""] + cities, key="fix_city")
+                
+                # عرض الخريطة والمعلومات إيلا تختار شي مكان
                 if sel_city:
                     city_info = df_geo[df_geo['City'] == sel_city].iloc[0]
-                    st.info(f"✨ {city_info['Description']}")
+                    st.success(f"✨ {city_info['Description']}")
+                    
                     m = folium.Map(location=[city_info['Lat'], city_info['Lon']], zoom_start=12)
                     folium.Marker([city_info['Lat'], city_info['Lon']], popup=city_info['Place']).add_to(m)
-                    st_folium(m, width=900, height=450, key="map_"+sel_city)
+                    st_folium(m, width=800, height=450, key="map_final_"+sel_city)
+                else:
+                    st.info("💡 اختر جهة ومدينة لاستكشاف المعالم على الخريطة")
+            else:
+                st.error("ملف البيانات 'landmarks_data.csv' غير موجود!")
 
         with tab3:
              st.header(f"📜 {t['tab3']}")
