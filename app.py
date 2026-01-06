@@ -231,7 +231,7 @@ else:
             if search_query:
                 st.success(f"✨ '{search_query}' is a gem!" if lang_choice == "English" else f"✨ '{search_query}' جوهرة مغربية!")
 
-        with tab2:
+            with tab2:
             st.write("Tab 2 content here...")
         if os.path.exists('landmarks_data.csv'):
             df_geo = pd.read_csv('landmarks_data.csv')
