@@ -175,21 +175,32 @@ else:
             st.subheader("📍 Verify Your Visit")
             
             # خيار البحث اليدوي (باش السائح ما يحصلش إيلا الـ GPS تعطل)
+            # لستة المدن (تقدري تزيدي فيها اللي بغيتي)
             cities_list = ["Fez", "Marrakech", "Chefchaouen", "Tanger", "Casablanca", "Rabat", "Essaouira", "Agadir", "Meknes", "Ouarzazate", "Ifrane", "Merzouga"]
-            selected_city = st.selectbox("Search your current city | ابحث عن مدينتك الحالية", ["--- Select City ---"] + cities_list)
             
-            st.write("OR") # أو جرب اللوكايشن
+            # زدت خيار "أخرى" في اللخر
+            selected_city = st.selectbox("Search your current city | ابحث عن مدينتك", ["--- Select City ---"] + cities_list + ["Other City... / مدينة أخرى..."])
             
-            # كنطلبوا الموقع بمجرد فتح التاب باش يكون واجد
+            # إيلا اختار "أخرى"، كيبان ليه مربع يكتب فيه
+            custom_city = ""
+            if selected_city == "Other City... / مدينة أخرى...":
+                custom_city = st.text_input("Enter your city name | اكتب اسم مدينتك")
+            
+            st.write("OR") 
+            
+            # (نفس الكود ديال اللوكايشن كيبقى من بعد)
             current_loc = streamlit_js_eval(js_expressions="window.navigator.geolocation.getCurrentPosition(pos => { return pos.coords })", key="gps_ready")
 
             if st.button("🛰️ Claim Local Heritage Stamp"):
-                # الخيار 1: إيلا السائح اختار المدينة بيدو
-                if selected_city != "--- Select City ---":
-                    save_stamp_to_db(st.session_state.visitor_name, st.session_state.visitor_email, selected_city)
-                    st.success(f"Stamp for {selected_city} added!")
+                # تحديد سمية المدينة النهائية
+                final_city = custom_city if selected_city == "Other City... / مدينة أخرى..." else selected_city
+                
+                if final_city and final_city != "--- Select City ---":
+                    save_stamp_to_db(st.session_state.visitor_name, st.session_state.visitor_email, final_city)
+                    st.success(f"Stamp for {final_city} added!")
                     st.balloons()
                     st.rerun()
+                # (الباقي ديال الكود كيبقى هو هو)
                 
                 # الخيار 2: إيلا السائح بغا يخدم بالـ GPS
                 elif current_loc:
