@@ -297,8 +297,8 @@ else:
                     </div>
                 ''', unsafe_allow_html=True)
 
-    st.write("---")
-    st.subheader(t['feedback'])
+             st.write("---")
+             st.subheader(t['feedback'])
     user_msg = st.text_area("Your Feedback...", key="feedback_area_unique")
     if st.button("Submit Feedback"):
         if save_feedback(st.session_state.visitor_name, st.session_state.visitor_email, user_msg):
