@@ -303,47 +303,4 @@ with st.expander("Get your Personalized Green Itinerary (15€)"):
                 st.markdown(f'<meta http-equiv="refresh" content="0;url={wa_url}">', unsafe_allow_html=True)
             else: st.warning("Please fill in your details.")
 
-# ==========================================
-# 📍 نظام التوثيق الجغرافي (Global GPS Verification)
-# محطوط "تحت كاع" باش يبان فكاع التابات بلا تكرار
-# ==========================================
-
-st.write("---") # خط فاصل باش يبان الفرق
-st.header("🛂 توثيق الرحلة الذكي (GPS)")
-
-with st.container(): # كدير إطار باش تجمع هاد الخدمة بوحدها
-    st.info("قم بتأكيد موقعك الحالي للحصول على طوابع البريد الرقمية لجواز سفرك التراثي.")
-    
-    col_gps1, col_gps2 = st.columns(2)
-    with col_gps1:
-        u_lat = st.number_input("خط العرض (Latitude)", value=0.0, format="%.6f", key="global_lat")
-    with col_gps2:
-        u_lon = st.number_input("خط الطول (Longitude)", value=0.0, format="%.6f", key="global_lon")
-
-    # قائمة المدن المغربية حسب الأقطاب الخمسة
-    destinations = {
-        "شفشاون (الشمال)": {"lat": 35.1713, "lon": -5.2697},
-        "فاس/صفرو (الوسط)": {"lat": 34.0181, "lon": -5.0078},
-        "مراكش (الجنوب)": {"lat": 31.6295, "lon": -7.9811},
-        "مرزوكة (الصحراء)": {"lat": 31.0802, "lon": -4.0141},
-        "الداخلة (الساحل)": {"lat": 23.6848, "lon": -15.9579},
-        "الصويرة (الساحل)": {"lat": 31.5085, "lon": -9.7595}
-    }
-
-    selected_dest = st.selectbox("اختر المكان الذي تتواجد به حالياً:", list(destinations.keys()), key="global_dest")
-
-    if st.button("🌟 الحصول على الختم البريدي"):
-        if u_lat == 0.0 or u_lon == 0.0:
-            st.warning("يرجى إدخال إحداثيات موقعك أولاً.")
-        else:
-            target = destinations[selected_dest]
-            # حساب المسافة التقريبية
-            distance = abs(u_lat - target['lat']) + abs(u_lon - target['lon'])
-            
-            if distance < 0.05:
-                st.success(f"✅ مبروك! لقد تم تأكيد وجودك في {selected_dest}. تم إضافة الطابع لجوازك!")
-                save_stamp_to_db(st.session_state.visitor_name, st.session_state.visitor_email, selected_dest)
-                st.balloons()
-            else:
-                st.error("❌ عذراً، موقعك الحالي لا يتطابق مع المدينة المختارة.")
 st.markdown("<center>© 2026 MAISON BALKISS - Smart Tourism 4.0</center>", unsafe_allow_html=True)
