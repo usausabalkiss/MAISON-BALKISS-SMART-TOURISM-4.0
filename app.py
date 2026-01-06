@@ -146,29 +146,29 @@ else:
             # قاعدة بيانات الأقطاب مع روابط صور جديدة ومضمونة
             hubs_data = {
                 "North": {
-                    "en": {"title": "The Mediterranean Soul", "desc": "Step into a dream of blue and white. From the artistic alleys of Chefchaouen to the legendary Caves of Hercules in Tangier. The North offers a unique blend of Rif mountain air and Mediterranean breeze.", "highlights": "• Chefchaouen (The Blue Pearl) • Tangier (Hercules Caves) • Akchour Waterfalls"},
-                    "ar": {"title": "روح المتوسط (الشمال)", "desc": "خطوة داخل حلم من الأزرق والأبيض. من أزقة شفشاون الفنية إلى مغارة هرقل الأسطورية في طنجة. يقدم الشمال مزيجاً فريداً من هواء جبال الريف ونسيم البحر المتوسط.", "highlights": "• الجوهرة الزرقاء (شفشاون) • طنجة (مغارة هرقل) • شلالات أقشور"},
-                    "img": "https://img.freepik.com/free-photo/view-city-chefchaouen-morocco_23-2148865668.jpg"
+                    "en": {"title": "The Mediterranean Soul", "desc": "A dream of blue and white. Experience the Rif mountains and Tangier's history.", "highlights": "• Chefchaouen • Tangier • Akchour"},
+                    "ar": {"title": "روح المتوسط (الشمال)", "desc": "حلم من الأزرق والأبيض. اكتشف جبال الريف وتاريخ طنجة.", "highlights": "• شفشاون • طنجة • أقشور"},
+                    "img": "https://images.unsplash.com/photo-1548013146-72479768bbaa?w=800" # صورة شفشاون حقيقية
                 },
                 "Center": {
-                    "en": {"title": "The Spiritual Heartland (Fes & Sefrou)", "desc": "The true essence of Morocco. Wander through Fes, the world's largest car-free urban area, then find peace in Sefrou’s waterfalls. Maison Balkiss is your gateway to this imperial magic.", "highlights": "• Fes Al-Qarawiyyin • Sefrou Cherry Waterfalls • Maison Balkiss (The Heart)"},
-                    "ar": {"title": "القلب الروحاني (فاس وصفرو)", "desc": "الجوهر الحقيقي للمغرب. تجول في فاس، أكبر منطقة حضارية خالية من السيارات في العالم، ثم استمتع بالهدوء عند شلالات صفرو. ميزون بلقيس هي بوابتك لهذا السحر الإمبراطوري.", "highlights": "• جامع القرويين بفاس • شلالات صفرو • ميزون بلقيس (القلب)"},
-                    "img": "https://img.freepik.com/free-photo/old-fez-medina-morocco_23-2148865611.jpg"
+                    "en": {"title": "The Spiritual Heartland (Fes & Sefrou)", "desc": "The cradle of history. From Fes Medina to Maison Balkiss in Sefrou.", "highlights": "• Fes • Sefrou Falls • Maison Balkiss"},
+                    "ar": {"title": "القلب الروحاني (فاس وصفرو)", "desc": "مهد التاريخ. من فاس العتيقة إلى ميزون بلقيس في صفرو.", "highlights": "• فاس • شلالات صفرو • ميزون بلقيس"},
+                    "img": "https://images.unsplash.com/photo-1549944850-84e00be4203b?w=800" # صورة فاس والزليج
                 },
                 "South": {
-                    "en": {"title": "The Red Oasis (Marrakech & Atlas)", "desc": "Where vibrant souks meet the snowy peaks of the Atlas. Experience the energy of Jemaa el-Fnaa and the timeless beauty of the red-mud kasbahs in the mountains.", "highlights": "• Jemaa el-Fnaa Square • Toubkal National Park • Ouarzazate Studios"},
-                    "ar": {"title": "واحة البهجة (مراكش والأطلس)", "desc": "حيث تلتقي الأسواق النابضة بالقمم الثلجية للأطلس. اختبر طاقة ساحة جامع الفناء والجمال الخالد للقصبات الطينية الحمراء في الجبال.", "highlights": "• ساحة جامع الفناء • متنزه توبقال الوطني • استوديوهات ورزازات"},
-                    "img": "https://img.freepik.com/free-photo/koutoubia-mosque-marrakesh_23-2148865604.jpg"
+                    "en": {"title": "The Red Oasis (Marrakech)", "desc": "Vibrant souks and the majestic High Atlas peaks.", "highlights": "• Jemaa el-Fnaa • Atlas Mountains • Ouarzazate"},
+                    "ar": {"title": "واحة البهجة (مراكش)", "desc": "الأسواق النابضة وقمم الأطلس الكبير الشامخة.", "highlights": "• جامع الفناء • جبال الأطلس • ورزازات"},
+                    "img": "https://images.unsplash.com/photo-1597212618440-806262de496b?w=800" # صورة مراكش (الكتبية)
                 },
                 "Desert": {
-                    "en": {"title": "The Golden Sahara", "desc": "Absolute silence and golden dunes. A spiritual journey on camelback into the heart of Merzouga. Nights here are spent under a sky that feels close enough to touch.", "highlights": "• Erg Chebbi Dunes • Camel Trekking • Star Gazing Experiences"},
-                    "ar": {"title": "الصحراء الذهبية", "desc": "هدوء مطلق وكثبان ذهبية. رحلة روحانية على ظهر الجمال في قلب مرزوكة. تقضى الليالي هنا تحت سماء تشعر أنها قريبة لدرجة اللمس.", "highlights": "• عرق الشبي • رحلات الجمال • تجربة رصد النجوم"},
-                    "img": "https://img.freepik.com/free-photo/camels-desert-sunset_23-2148865655.jpg"
+                    "en": {"title": "The Golden Sahara", "desc": "Golden dunes and camel treks at sunset in Merzouga.", "highlights": "• Erg Chebbi • Camel Trekking • Star Gazing"},
+                    "ar": {"title": "الصحراء الذهبية", "desc": "كثبان رملية ذهبية ورحلات الجمال عند الغروب في مرزوكة.", "highlights": "• عرق الشبي • رحلات الجمال • رصد النجوم"},
+                    "img": "https://images.unsplash.com/photo-1505051508008-923feaf90180?w=800" # صورة الجمل في الرمل
                 },
                 "Coast": {
-                    "en": {"title": "The Atlantic Breeze", "desc": "A paradise for surfers and dreamers. From the wind-swept ramparts of Essaouira to the white sands of Agadir and the kitesurfing lagoons of Dakhla.", "highlights": "• Essaouira Medina • Agadir Bay • Dakhla Blue Lagoon"},
-                    "ar": {"title": "نسيم المحيط (الساحل)", "desc": "جنة لراكبي الأمواج والحالمين. من أسوار الصويرة التي تلاعبها الرياح إلى رمال أكادير البيضاء وبحيرات الداخلة لركوب الأمواج.", "highlights": "• مدينة الصويرة • خليج أكادير • بحيرة الداخلة"},
-                    "img": "https://img.freepik.com/free-photo/essaouira-morocco_23-2148865624.jpg"
+                    "en": {"title": "The Atlantic Breeze", "desc": "The artistic wind city of Essaouira and surfing in Dakhla.", "highlights": "• Essaouira • Agadir • Dakhla"},
+                    "ar": {"title": "نسيم المحيط (الساحل)", "desc": "مدينة الرياح والفنون الصويرة وركوب الأمواج بالداخلة.", "highlights": "• الصويرة • أكادير • الداخلة"},
+                    "img": "https://images.unsplash.com/photo-1539129790410-d0124747b290?w=800" # صورة قوارب الصويرة الزرقاء
                 }
             }
 
