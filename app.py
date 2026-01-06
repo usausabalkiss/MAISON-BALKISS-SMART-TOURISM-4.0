@@ -134,78 +134,69 @@ if not st.session_state.logged_in:
 
 # 6. الواجهة الرئيسية
 else:
-        # العنوان الرئيسي والترحيب مورا العلامة التجارية
         st.title(f"👑 {t['welcome']}")
         st.subheader(t['subtitle'])
         
-        # تعريف الـ 3 تابات اللي عندك فقط
         tab1, tab2, tab3 = st.tabs([t['tab1'], t['tab2'], t['tab3']])
 
-        # --- بداية Tab 1: رحلة عبر أقطاب المغرب ---
         with tab1:
-            # نظام اختيار اللغة داخل التاب
-            lang = st.radio("🌐 Choose Language / اختر اللغة", ("English", "العربية"), horizontal=True, key="lang_selector")
+            # نظام اختيار اللغة
+            lang = st.radio("🌐 Language / اللغة", ("English", "العربية"), horizontal=True, key="lang_v3")
             
-            # قاعدة بيانات الأقطاب (وصف غني وشامل وصور حقيقية)
+            # قاعدة بيانات الأقطاب مع روابط صور جديدة ومضمونة
             hubs_data = {
                 "North": {
-                    "en": {"title": "The Mediterranean Soul (North)", "desc": "A dream of blue and white where the Rif mountains meet the sea. Experience the Andalusian heritage of Tetouan and the international vibe of Tangier.", "highlights": "• Blue City (Chefchaouen) • Tangier Kasbah • Akchour Waterfalls"},
-                    "ar": {"title": "روح المتوسط (الشمال)", "desc": "حلم من الأزرق والأبيض، حيث تعانق جبال الريف مياه المتوسط. استكشف الإرث الأندلسي بتطوان ونبض طنجة العالمي.", "highlights": "• الجوهرة الزرقاء (شفشاون) • قصبة طنجة • شلالات أقشور"},
-                    "img": "https://images.unsplash.com/photo-1548013146-72479768bbaa?w=1000"
+                    "en": {"title": "The Mediterranean Soul", "desc": "Step into a dream of blue and white. From the artistic alleys of Chefchaouen to the legendary Caves of Hercules in Tangier. The North offers a unique blend of Rif mountain air and Mediterranean breeze.", "highlights": "• Chefchaouen (The Blue Pearl) • Tangier (Hercules Caves) • Akchour Waterfalls"},
+                    "ar": {"title": "روح المتوسط (الشمال)", "desc": "خطوة داخل حلم من الأزرق والأبيض. من أزقة شفشاون الفنية إلى مغارة هرقل الأسطورية في طنجة. يقدم الشمال مزيجاً فريداً من هواء جبال الريف ونسيم البحر المتوسط.", "highlights": "• الجوهرة الزرقاء (شفشاون) • طنجة (مغارة هرقل) • شلالات أقشور"},
+                    "img": "https://img.freepik.com/free-photo/view-city-chefchaouen-morocco_23-2148865668.jpg"
                 },
                 "Center": {
-                    "en": {"title": "The Spiritual Heartland (Fes & Sefrou)", "desc": "The cradle of Moroccan civilization. From the 9,000 alleys of Fes to the cherry orchards of Sefrou. Your stay at Maison Balkiss is the heart of this journey.", "highlights": "• Fes Medina • Sefrou Falls & Maison Balkiss • Roman Volubilis"},
-                    "ar": {"title": "القلب الروحاني (فاس وصفرو)", "desc": "مهد الحضارة المغربية. من أزقة فاس التسعة آلاف إلى بساتين الكرز في صفرو. إقامتك في ميزون بلقيس هي جوهر هذه الرحلة.", "highlights": "• مدينة فاس العتيقة • شلالات صفرو وميزون بلقيس • وليلي الأثرية"},
-                    "img": "https://images.unsplash.com/photo-1549944850-84e00be4203b?w=1000"
+                    "en": {"title": "The Spiritual Heartland (Fes & Sefrou)", "desc": "The true essence of Morocco. Wander through Fes, the world's largest car-free urban area, then find peace in Sefrou’s waterfalls. Maison Balkiss is your gateway to this imperial magic.", "highlights": "• Fes Al-Qarawiyyin • Sefrou Cherry Waterfalls • Maison Balkiss (The Heart)"},
+                    "ar": {"title": "القلب الروحاني (فاس وصفرو)", "desc": "الجوهر الحقيقي للمغرب. تجول في فاس، أكبر منطقة حضارية خالية من السيارات في العالم، ثم استمتع بالهدوء عند شلالات صفرو. ميزون بلقيس هي بوابتك لهذا السحر الإمبراطوري.", "highlights": "• جامع القرويين بفاس • شلالات صفرو • ميزون بلقيس (القلب)"},
+                    "img": "https://img.freepik.com/free-photo/old-fez-medina-morocco_23-2148865611.jpg"
                 },
                 "South": {
-                    "en": {"title": "The Red Oasis (Marrakech & Atlas)", "desc": "Vibrant markets, the majestic High Atlas peaks, and the cinematic landscapes of Ouarzazate. A world of red clay and green palms.", "highlights": "• Jemaa el-Fnaa • Toubkal National Park • Ait Ben Haddou"},
-                    "ar": {"title": "واحة البهجة (مراكش والأطلس)", "desc": "الأسواق النابضة، قمم الأطلس الكبير الشامخة، والمناظر السينمائية في ورزازات. عالم من الطين الأحمر والنخيل الأخضر.", "highlights": "• ساحة جامع الفناء • جبل توبقال • قصر آيت بن حدو"},
-                    "img": "https://images.unsplash.com/photo-1597212618440-806262de496b?w=1000"
+                    "en": {"title": "The Red Oasis (Marrakech & Atlas)", "desc": "Where vibrant souks meet the snowy peaks of the Atlas. Experience the energy of Jemaa el-Fnaa and the timeless beauty of the red-mud kasbahs in the mountains.", "highlights": "• Jemaa el-Fnaa Square • Toubkal National Park • Ouarzazate Studios"},
+                    "ar": {"title": "واحة البهجة (مراكش والأطلس)", "desc": "حيث تلتقي الأسواق النابضة بالقمم الثلجية للأطلس. اختبر طاقة ساحة جامع الفناء والجمال الخالد للقصبات الطينية الحمراء في الجبال.", "highlights": "• ساحة جامع الفناء • متنزه توبقال الوطني • استوديوهات ورزازات"},
+                    "img": "https://img.freepik.com/free-photo/koutoubia-mosque-marrakesh_23-2148865604.jpg"
                 },
                 "Desert": {
-                    "en": {"title": "The Golden Sahara", "desc": "Silence, magic, and endless dunes. Ride camels at sunset and sleep under a billion stars in Merzouga.", "highlights": "• Erg Chebbi Dunes • Camel Trekking • Star Gazing"},
-                    "ar": {"title": "الصحراء الذهبية", "desc": "الهدوء، السحر، وكثبان رملية لا تنتهي. اركب الجمال عند الغروب ونم تحت غطاء من مليار نجمة في مرزوكة.", "highlights": "• عرق الشبي • رحلات الجمال • رصد النجوم"},
-                    "img": "https://images.unsplash.com/photo-1505051508008-923feaf90180?w=1000"
+                    "en": {"title": "The Golden Sahara", "desc": "Absolute silence and golden dunes. A spiritual journey on camelback into the heart of Merzouga. Nights here are spent under a sky that feels close enough to touch.", "highlights": "• Erg Chebbi Dunes • Camel Trekking • Star Gazing Experiences"},
+                    "ar": {"title": "الصحراء الذهبية", "desc": "هدوء مطلق وكثبان ذهبية. رحلة روحانية على ظهر الجمال في قلب مرزوكة. تقضى الليالي هنا تحت سماء تشعر أنها قريبة لدرجة اللمس.", "highlights": "• عرق الشبي • رحلات الجمال • تجربة رصد النجوم"},
+                    "img": "https://img.freepik.com/free-photo/camels-desert-sunset_23-2148865655.jpg"
                 },
                 "Coast": {
-                    "en": {"title": "The Atlantic Breeze", "desc": "From the artistic wind city of Essaouira to the surfing paradise of Dakhla. Pure ocean energy and fresh seafood.", "highlights": "• Essaouira Mogador • Agadir Bay • Dakhla Kitesurfing"},
-                    "ar": {"title": "نسيم المحيط (الساحل)", "desc": "من مدينة الرياح والفنون الصويرة إلى جنة ركوب الأمواج بالداخلة. طاقة المحيط الصافية وأشهى المأكولات البحرية.", "highlights": "• صويرة موغادور • خليج أكادير • الداخلة"},
-                    "img": "https://images.unsplash.com/photo-1539129790410-d0124747b290?w=1000"
+                    "en": {"title": "The Atlantic Breeze", "desc": "A paradise for surfers and dreamers. From the wind-swept ramparts of Essaouira to the white sands of Agadir and the kitesurfing lagoons of Dakhla.", "highlights": "• Essaouira Medina • Agadir Bay • Dakhla Blue Lagoon"},
+                    "ar": {"title": "نسيم المحيط (الساحل)", "desc": "جنة لراكبي الأمواج والحالمين. من أسوار الصويرة التي تلاعبها الرياح إلى رمال أكادير البيضاء وبحيرات الداخلة لركوب الأمواج.", "highlights": "• مدينة الصويرة • خليج أكادير • بحيرة الداخلة"},
+                    "img": "https://img.freepik.com/free-photo/essaouira-morocco_23-2148865624.jpg"
                 }
             }
 
-            st.write("---")
-            st.markdown(f"### {'📍 Explore Morocco by Region' if lang == 'English' else '📍 اكتشف مناطق المغرب'}")
-            
-            # أزرار الأقطاب واضحة وسهلة الاستعمال
+            st.divider()
+            # الأزرار دابا غاتغير الحالة فعلاً
             cols = st.columns(5)
             if 'active_hub' not in st.session_state:
                 st.session_state.active_hub = "Center"
 
             for i, k in enumerate(hubs_data.keys()):
                 label = hubs_data[k]['en']['title'].split('(')[0] if lang == "English" else hubs_data[k]['ar']['title'].split('(')[0]
-                if cols[i].button(label, key=f"btn_h_{k}", use_container_width=True):
+                if cols[i].button(label, key=f"btn_nav_{k}", use_container_width=True):
                     st.session_state.active_hub = k
+                    st.rerun() # هاد السطر هو اللي كيخلي الصور تتبدل فالحين
 
-            # عرض القطب المختار (صور ووصف شامل)
+            # عرض المحتوى المختار
             selected = hubs_data[st.session_state.active_hub]
             st.markdown("---")
-            c_left, c_right = st.columns([1.5, 1])
+            c1, c2 = st.columns([1.5, 1])
             
-            with c_left:
+            with c1:
                 st.image(selected['img'], use_container_width=True)
             
-            with c_right:
+            with c2:
                 txt = selected['en'] if lang == "English" else selected['ar']
-                st.subheader(txt['title'])
+                st.header(txt['title'])
                 st.write(txt['desc'])
-                st.info(f"📍 **{'Highlights' if lang == 'English' else 'أهم المعالم'}:**\n{txt['highlights']}")
-                
-                if st.session_state.active_hub == "Center":
-                    st.success("🏠 **Maison Balkiss** " + ("is the heart of this region!" if lang == "English" else "هي قلب هذه المنطقة!"))
-
-        # --- Tab 2: اكتشف المزيد (Discover) ---
+                st.info(f"📍 **{'Key Highlights' if lang == 'English' else 'أهم المعالم'}:**\n{txt['highlights']}")
         with tab2:
             st.header(t['tab2'])
             st.write("Additional tourism content and maps can go here." if lang == "English" else "يمكن إضافة محتوى سياحي إضافي وخرائط هنا.")
