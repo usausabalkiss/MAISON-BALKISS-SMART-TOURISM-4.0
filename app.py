@@ -134,13 +134,11 @@ if not st.session_state.logged_in:
 
 # 6. الواجهة الرئيسية
 else:
-    st.title(f"👑 {t['welcome']}")
-    st.subheader(t['subtitle'])
-    tab1, tab2, tab3 = st.tabs([t['tab1'], t['tab2'], t['tab3']])
-
-    import g4f # استيراد المكتبة البديلة
-
-    import streamlit as st
+        st.title(f"👑 {t['welcome']}")
+        st.subheader(t['subtitle'])
+        
+        # 1. تعريف الأبواب (يجب أن تكون داخل الـ else)
+        tab1, tab2, tab3 = st.tabs([t['tab1'], t['tab2'], t['tab3']])
 
 with tab1:
     # --- 1. إعداد نظام اللغة ---
