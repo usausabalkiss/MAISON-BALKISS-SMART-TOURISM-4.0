@@ -1,3 +1,6 @@
+# هادو زيديهم مع الـ imports اللولين
+import gspread
+from google.oauth2.service_account import Credentials
 from streamlit_js_eval import streamlit_js_eval
 import streamlit as st
 import pandas as pd
@@ -23,35 +26,82 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # --- وظائف قاعدة البيانات المحلية ---
+import gspread
+from google.oauth2.service_account import Credentials
+
+# --- إعدادات الاتصال بـ Google Sheets ---
+# ملاحظة: يجب إعداد st.secrets["gcp_service_account"] بالمفتاح الخاص بك
+def get_db_connection():
+    scope = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
+    # هنا نستدعي المفاتيح السرية المخزنة لضمان الأمان
+    creds = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scope)
+    client = gspread.authorize(creds)
+    # تأكدي من أن اسم الملف هنا يطابق اسم ملف جوجل شيت
+    sheet = client.open("Maison_Balkiss_DB")
+    return sheet
+
+# --- الوظائف الجديدة (بديلة للـ CSV) ---
+
 def save_user_to_db(name, email, password):
-    new_data = pd.DataFrame([[datetime.now().strftime("%Y-%m-%d %H:%M"), name, email, str(password)]], 
-                            columns=['Date', 'Name', 'Email', 'Password'])
-    new_data.to_csv('visitors_log.csv', mode='a', header=not os.path.exists('visitors_log.csv'), index=False)
+    try:
+        sh = get_db_connection()
+        worksheet = sh.worksheet("Visitors")
+        # إضافة صف جديد
+        worksheet.append_row([datetime.now().strftime("%Y-%m-%d %H:%M"), name, email, str(password)])
+        return True
+    except Exception as e:
+        st.error(f"Error saving user: {e}")
+        return False
 
 def check_login(email, password):
-    if os.path.exists('visitors_log.csv'):
-        df = pd.read_csv('visitors_log.csv')
-        user = df[(df['Email'].astype(str) == str(email)) & (df['Password'].astype(str) == str(password))]
-        if not user.empty: return user.iloc[0]['Name']
+    try:
+        sh = get_db_connection()
+        worksheet = sh.worksheet("Visitors")
+        data = worksheet.get_all_records()
+        df = pd.DataFrame(data)
+        
+        # التأكد من أن الأعمدة موجودة وتنظيف البيانات
+        if not df.empty and 'Email' in df.columns and 'Password' in df.columns:
+            # تحويل القيم إلى نصوص للمقارنة
+            user = df[(df['Email'].astype(str) == str(email)) & (df['Password'].astype(str) == str(password))]
+            if not user.empty:
+                return user.iloc[0]['Name']
+    except Exception as e:
+        # st.error(f"Login Error: {e}") # يمكن إخفاء هذا السطر لاحقاً
+        pass
     return None
 
 def save_stamp_to_db(name, email, place):
-    now = datetime.now().strftime("%Y-%m-%d %H:%M")
-    df = pd.DataFrame([[name, email, place, now]], columns=['Name', 'Email', 'Place', 'Date'])
-    df.to_csv('stamps_log.csv', mode='a', header=not os.path.exists('stamps_log.csv'), index=False)
+    try:
+        sh = get_db_connection()
+        worksheet = sh.worksheet("Stamps")
+        worksheet.append_row([name, email, place, datetime.now().strftime("%Y-%m-%d %H:%M")])
+    except Exception as e:
+        st.error(f"Error saving stamp: {e}")
 
 def load_user_stamps(email):
-    if os.path.exists('stamps_log.csv'):
-        df = pd.read_csv('stamps_log.csv')
-        user_stamps = df[df['Email'].astype(str) == str(email)]
-        return user_stamps.to_dict('records')
+    try:
+        sh = get_db_connection()
+        worksheet = sh.worksheet("Stamps")
+        data = worksheet.get_all_records()
+        df = pd.DataFrame(data)
+        
+        if not df.empty and 'Email' in df.columns:
+            user_stamps = df[df['Email'].astype(str) == str(email)]
+            return user_stamps.to_dict('records')
+    except Exception as e:
+        pass
     return []
 
 def save_feedback(name, email, message):
     if message:
-        df = pd.DataFrame([[datetime.now().strftime("%Y-%m-%d %H:%M"), name, email, message]], columns=['Date', 'Name', 'Email', 'Message'])
-        df.to_csv('feedback_log.csv', mode='a', header=not os.path.exists('feedback_log.csv'), index=False)
-        return True
+        try:
+            sh = get_db_connection()
+            worksheet = sh.worksheet("Feedback")
+            worksheet.append_row([datetime.now().strftime("%Y-%m-%d %H:%M"), name, email, message])
+            return True
+        except Exception as e:
+            st.error(f"Error: {e}")
     return False
 
 # 2. قاموس اللغات (تم تبديل سمية التاب 1)
