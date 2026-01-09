@@ -6,3 +6,5 @@ streamlit-folium
 geopy
 g4f
 streamlit-js-eval
+gspread
+google-auth
